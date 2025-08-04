@@ -1,0 +1,5 @@
+> Server running on http://localhost:\\.\pipe\cd7691a1-3f1d-4bda-beef-3f04f67c8643 [development mode]
+ ✓ Compiled /404 in 205ms (295 modules)
+ GET /_next/static/webpack/e3af8b5406233924.webpack.hot-update.json 404 in 277ms
+ ✓ Compiled /login in 151ms (343 modules)
+ GET /login 200 in 202ms

@@ -1,0 +1,5 @@
+> Server running on http://localhost:\\.\pipe\68e89465-4ede-4a80-bd51-847c109fbf62 [development mode]
+ ✓ Compiled / in 219ms (326 modules)
+ GET / 200 in 297ms
+ GET / 200 in 337ms
+ GET / 200 in 16ms

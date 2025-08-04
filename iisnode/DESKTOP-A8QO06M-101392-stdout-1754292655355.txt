@@ -1,0 +1,7 @@
+> Server running on http://localhost:\\.\pipe\dabb1066-c0fe-4b71-8ae5-c338bb5246d7 [development mode]
+ ✓ Compiled /login in 271ms (339 modules)
+ GET /login 200 in 381ms
+   Reload env: .env
+ ✓ Compiled in 135ms (339 modules)
+ GET /login 200 in 26ms
+ ✓ Compiled in 86ms (339 modules)

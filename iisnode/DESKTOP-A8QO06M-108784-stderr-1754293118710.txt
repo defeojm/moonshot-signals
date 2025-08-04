@@ -1,0 +1,18 @@
+(node:108784) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⨯ ./pages/login.js
+Error: 
+  [31mx[0m Expected '}', got '<eof>'
+     ,-[[36;1;4mC:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\pages\login.js[0m:164:1]
+ [2m164[0m |     color: '#5e9eff',
+ [2m165[0m |     textDecoration: 'none'
+ [2m166[0m |   }
+ [2m167[0m | };
+     : [31;1m ^[0m
+     `----
+
+Caused by:
+    Syntax Error
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload

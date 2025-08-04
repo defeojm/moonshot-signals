@@ -1,0 +1,176 @@
+2025-08-04T11:33:57: Error during Next.js initialization: Error: ENOENT: no such file or directory, open 'C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\.next\prerender-manifest.json'
+    at async open (node:internal/fs/promises:638:25)
+    at async Object.readFile (node:internal/fs/promises:1242:14)
+    at async setupFsCheck (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-utils\filesystem.js:188:40)
+    at async initialize (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-server.js:61:23)
+    at async NextCustomServer.prepare (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\next.js:242:28) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\inetpub\\wwwroot\\moonshot-frontend\\moonshot-frontend\\.next\\prerender-manifest.json'
+}
+2025-08-04T11:33:57: Error during Next.js initialization: Error: ENOENT: no such file or directory, open 'C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\.next\prerender-manifest.json'
+    at async open (node:internal/fs/promises:638:25)
+    at async Object.readFile (node:internal/fs/promises:1242:14)
+    at async setupFsCheck (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-utils\filesystem.js:188:40)
+    at async initialize (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-server.js:61:23)
+    at async NextCustomServer.prepare (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\next.js:242:28) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\inetpub\\wwwroot\\moonshot-frontend\\moonshot-frontend\\.next\\prerender-manifest.json'
+}
+2025-08-04T11:33:58: Error during Next.js initialization: Error: ENOENT: no such file or directory, open 'C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\.next\prerender-manifest.json'
+    at async open (node:internal/fs/promises:638:25)
+    at async Object.readFile (node:internal/fs/promises:1242:14)
+    at async setupFsCheck (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-utils\filesystem.js:188:40)
+    at async initialize (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-server.js:61:23)
+    at async NextCustomServer.prepare (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\next.js:242:28) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\inetpub\\wwwroot\\moonshot-frontend\\moonshot-frontend\\.next\\prerender-manifest.json'
+}
+2025-08-04T11:33:58: Error during Next.js initialization: Error: ENOENT: no such file or directory, open 'C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\.next\prerender-manifest.json'
+    at async open (node:internal/fs/promises:638:25)
+    at async Object.readFile (node:internal/fs/promises:1242:14)
+    at async setupFsCheck (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-utils\filesystem.js:188:40)
+    at async initialize (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-server.js:61:23)
+    at async NextCustomServer.prepare (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\next.js:242:28) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\inetpub\\wwwroot\\moonshot-frontend\\moonshot-frontend\\.next\\prerender-manifest.json'
+}
+2025-08-04T11:33:59: Error during Next.js initialization: Error: ENOENT: no such file or directory, open 'C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\.next\prerender-manifest.json'
+    at async open (node:internal/fs/promises:638:25)
+    at async Object.readFile (node:internal/fs/promises:1242:14)
+    at async setupFsCheck (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-utils\filesystem.js:188:40)
+    at async initialize (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-server.js:61:23)
+    at async NextCustomServer.prepare (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\next.js:242:28) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\inetpub\\wwwroot\\moonshot-frontend\\moonshot-frontend\\.next\\prerender-manifest.json'
+}
+2025-08-04T11:33:59: Error during Next.js initialization: Error: ENOENT: no such file or directory, open 'C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\.next\prerender-manifest.json'
+    at async open (node:internal/fs/promises:638:25)
+    at async Object.readFile (node:internal/fs/promises:1242:14)
+    at async setupFsCheck (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-utils\filesystem.js:188:40)
+    at async initialize (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-server.js:61:23)
+    at async NextCustomServer.prepare (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\next.js:242:28) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\inetpub\\wwwroot\\moonshot-frontend\\moonshot-frontend\\.next\\prerender-manifest.json'
+}
+2025-08-04T11:34:00: Error during Next.js initialization: Error: ENOENT: no such file or directory, open 'C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\.next\prerender-manifest.json'
+    at async open (node:internal/fs/promises:638:25)
+    at async Object.readFile (node:internal/fs/promises:1242:14)
+    at async setupFsCheck (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-utils\filesystem.js:188:40)
+    at async initialize (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-server.js:61:23)
+    at async NextCustomServer.prepare (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\next.js:242:28) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\inetpub\\wwwroot\\moonshot-frontend\\moonshot-frontend\\.next\\prerender-manifest.json'
+}
+2025-08-04T11:34:00: Error during Next.js initialization: Error: ENOENT: no such file or directory, open 'C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\.next\prerender-manifest.json'
+    at async open (node:internal/fs/promises:638:25)
+    at async Object.readFile (node:internal/fs/promises:1242:14)
+    at async setupFsCheck (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-utils\filesystem.js:188:40)
+    at async initialize (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-server.js:61:23)
+    at async NextCustomServer.prepare (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\next.js:242:28) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\inetpub\\wwwroot\\moonshot-frontend\\moonshot-frontend\\.next\\prerender-manifest.json'
+}
+2025-08-04T11:34:01: Error during Next.js initialization: Error: ENOENT: no such file or directory, open 'C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\.next\prerender-manifest.json'
+    at async open (node:internal/fs/promises:638:25)
+    at async Object.readFile (node:internal/fs/promises:1242:14)
+    at async setupFsCheck (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-utils\filesystem.js:188:40)
+    at async initialize (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-server.js:61:23)
+    at async NextCustomServer.prepare (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\next.js:242:28) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\inetpub\\wwwroot\\moonshot-frontend\\moonshot-frontend\\.next\\prerender-manifest.json'
+}
+2025-08-04T11:34:01: Error during Next.js initialization: Error: ENOENT: no such file or directory, open 'C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\.next\prerender-manifest.json'
+    at async open (node:internal/fs/promises:638:25)
+    at async Object.readFile (node:internal/fs/promises:1242:14)
+    at async setupFsCheck (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-utils\filesystem.js:188:40)
+    at async initialize (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-server.js:61:23)
+    at async NextCustomServer.prepare (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\next.js:242:28) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\inetpub\\wwwroot\\moonshot-frontend\\moonshot-frontend\\.next\\prerender-manifest.json'
+}
+2025-08-04T11:34:02: Error during Next.js initialization: Error: ENOENT: no such file or directory, open 'C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\.next\prerender-manifest.json'
+    at async open (node:internal/fs/promises:638:25)
+    at async Object.readFile (node:internal/fs/promises:1242:14)
+    at async setupFsCheck (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-utils\filesystem.js:188:40)
+    at async initialize (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-server.js:61:23)
+    at async NextCustomServer.prepare (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\next.js:242:28) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\inetpub\\wwwroot\\moonshot-frontend\\moonshot-frontend\\.next\\prerender-manifest.json'
+}
+2025-08-04T11:34:02: Error during Next.js initialization: Error: ENOENT: no such file or directory, open 'C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\.next\prerender-manifest.json'
+    at async open (node:internal/fs/promises:638:25)
+    at async Object.readFile (node:internal/fs/promises:1242:14)
+    at async setupFsCheck (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-utils\filesystem.js:188:40)
+    at async initialize (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-server.js:61:23)
+    at async NextCustomServer.prepare (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\next.js:242:28) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\inetpub\\wwwroot\\moonshot-frontend\\moonshot-frontend\\.next\\prerender-manifest.json'
+}
+2025-08-04T11:34:03: Error during Next.js initialization: Error: ENOENT: no such file or directory, open 'C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\.next\prerender-manifest.json'
+    at async open (node:internal/fs/promises:638:25)
+    at async Object.readFile (node:internal/fs/promises:1242:14)
+    at async setupFsCheck (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-utils\filesystem.js:188:40)
+    at async initialize (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-server.js:61:23)
+    at async NextCustomServer.prepare (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\next.js:242:28) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\inetpub\\wwwroot\\moonshot-frontend\\moonshot-frontend\\.next\\prerender-manifest.json'
+}
+2025-08-04T11:34:03: Error during Next.js initialization: Error: ENOENT: no such file or directory, open 'C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\.next\prerender-manifest.json'
+    at async open (node:internal/fs/promises:638:25)
+    at async Object.readFile (node:internal/fs/promises:1242:14)
+    at async setupFsCheck (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-utils\filesystem.js:188:40)
+    at async initialize (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-server.js:61:23)
+    at async NextCustomServer.prepare (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\next.js:242:28) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\inetpub\\wwwroot\\moonshot-frontend\\moonshot-frontend\\.next\\prerender-manifest.json'
+}
+2025-08-04T11:34:04: Error during Next.js initialization: Error: ENOENT: no such file or directory, open 'C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\.next\prerender-manifest.json'
+    at async open (node:internal/fs/promises:638:25)
+    at async Object.readFile (node:internal/fs/promises:1242:14)
+    at async setupFsCheck (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-utils\filesystem.js:188:40)
+    at async initialize (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-server.js:61:23)
+    at async NextCustomServer.prepare (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\next.js:242:28) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\inetpub\\wwwroot\\moonshot-frontend\\moonshot-frontend\\.next\\prerender-manifest.json'
+}
+2025-08-04T11:34:04: Error during Next.js initialization: Error: ENOENT: no such file or directory, open 'C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\.next\prerender-manifest.json'
+    at async open (node:internal/fs/promises:638:25)
+    at async Object.readFile (node:internal/fs/promises:1242:14)
+    at async setupFsCheck (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-utils\filesystem.js:188:40)
+    at async initialize (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\lib\router-server.js:61:23)
+    at async NextCustomServer.prepare (C:\inetpub\wwwroot\moonshot-frontend\moonshot-frontend\node_modules\next\dist\server\next.js:242:28) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\inetpub\\wwwroot\\moonshot-frontend\\moonshot-frontend\\.next\\prerender-manifest.json'
+}
