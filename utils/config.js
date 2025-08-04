@@ -6,7 +6,7 @@ const config = {
   ),
   WS_URL: process.env.NEXT_PUBLIC_WS_URL || (
     process.env.NODE_ENV === 'production'
-      ? 'wss://moonshot-signals-backend-production.up.railway.app'  // Use Railway backend URL
+      ? 'wss://moonshot-signals-backend-production.up.railway.app/ws'  // Use Railway backend URL
       : 'ws://localhost:5000'
   )
 };
