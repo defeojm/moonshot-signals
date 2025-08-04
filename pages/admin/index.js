@@ -118,10 +118,23 @@ export default function AdminDashboard() {
       const response = await fetch(`${config.API_URL}/api/trades`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
-      setTrades(data);
+      
+      // Ensure we always set an array
+      if (Array.isArray(data)) {
+        setTrades(data);
+      } else {
+        console.error('Expected array of trades, got:', data);
+        setTrades([]);
+      }
     } catch (error) {
       console.error('Error fetching trades:', error);
+      setTrades([]); // Set empty array on error
     }
   };
 
@@ -395,10 +408,10 @@ export default function AdminDashboard() {
             <div style={styles.tradeFeed}>
               <div style={styles.feedHeader}>
                 <h2>Live Trade Feed</h2>
-                <span style={styles.tradeCount}>{trades.filter(t => t.status === 'OPEN').length} Open</span>
+                <span style={styles.tradeCount}>{Array.isArray(trades) ? trades.filter(t => t.status === 'OPEN').length : 0} Open</span>
               </div>
               
-              {trades.map(trade => (
+              {Array.isArray(trades) && trades.map(trade => (
                 <div 
                   key={trade.id} 
                   style={{
