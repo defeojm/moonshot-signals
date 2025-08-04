@@ -28,7 +28,7 @@ export default function Login() {
       
       // Use the base URL and add /api/auth/login (WITH the /api prefix)
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || config.API_URL;
-      const loginUrl = `${baseUrl}/api/auth/login`; // FIXED: Added /api/ prefix
+      const loginUrl = `${baseUrl}/auth/login`; // FIXED: Added /api/ prefix
       
       console.log('Login URL being used:', loginUrl);
       
