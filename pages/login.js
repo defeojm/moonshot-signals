@@ -26,16 +26,17 @@ export default function Login() {
       console.log('NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
       console.log('config.API_URL:', config.API_URL);
       
-      // Use the base URL and add /auth/login (without the extra /api)
+      // Use the base URL and add /api/auth/login (WITH the /api prefix)
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || config.API_URL;
-      const loginUrl = `${baseUrl}/auth/login`;
+      const loginUrl = `${baseUrl}/api/auth/login`; // FIXED: Added /api/ prefix
       
       console.log('Login URL being used:', loginUrl);
       
       const response = await fetch(loginUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
+        credentials: 'include' // Added for CORS
       });
 
       const data = await response.json();
