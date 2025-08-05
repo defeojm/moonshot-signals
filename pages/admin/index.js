@@ -117,10 +117,10 @@ export default function AdminDashboard() {
     console.log('🔍 Fetching trades...');
     console.log('Token exists:', !!token);
     console.log('API URL:', config.API_URL);
-    console.log('Full URL:', `${config.API_URL}/api/trades`);
+    console.log('Full URL:', `${config.API_URL}/trades`);
     
     try {
-      const response = await fetch(`${config.API_URL}/api/trades`, {
+      const response = await fetch(`${config.API_URL}/trades`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -164,7 +164,7 @@ export default function AdminDashboard() {
     console.log('🔍 Fetching stats...');
     
     try {
-      const response = await fetch(`${config.API_URL}/api/signals/performance/today`, {
+      const response = await fetch(`${config.API_URL}/signals/performance/today`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -201,7 +201,7 @@ export default function AdminDashboard() {
     console.log('🔍 Fetching subscription stats...');
     
     try {
-      const response = await fetch(`${config.API_URL}/api/admin/subscription-stats`, {
+      const response = await fetch(`${config.API_URL}/admin/subscription-stats`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -411,7 +411,7 @@ export default function AdminDashboard() {
 
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`${config.API_URL}/api/trades`, {
+      const response = await fetch(`${config.API_URL}/trades`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -456,7 +456,7 @@ export default function AdminDashboard() {
   const closeTrade = async (tradeId, exitPrice) => {
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`${config.API_URL}/api/trades/${tradeId}/close`, {
+      const response = await fetch(`${config.API_URL}/trades/${tradeId}/close`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
