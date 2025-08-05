@@ -445,7 +445,7 @@ export default function AdminDashboard() {
         </div>
         <div style={styles.statItem}>
           <div style={styles.statValue}>${stats?.total_pnl?.toFixed(2) || '0.00'}</div>
-          <div style={styles.statLabel}>Today's P&L</div>
+          <div style={styles.statLabel}>Today&apos;s P&L</div>
         </div>
       </div>
 
