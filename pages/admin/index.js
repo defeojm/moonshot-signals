@@ -1178,7 +1178,6 @@ const styles = {
   openTrade: {
     borderLeft: '4px solid #64ffda'
   },
-
   actionButtons: {
     display: 'flex',
     gap: '0.5rem'
@@ -1334,41 +1333,179 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer'
   },
+  
+  // UPDATED SIGNALS SECTION STYLES
   signalsTab: {
-    backgroundColor: '#151935',
-    padding: '2rem',
-    borderRadius: '12px',
-    border: '1px solid #2a3456'
+    padding: '2rem'  // Removed the background and border
   },
-  signalsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
-    gap: '1rem',
-    marginTop: '1.5rem'
-  },
-  signalCard: {
-    backgroundColor: '#1e2444',
-    padding: '1.5rem',
-    borderRadius: '8px',
-    border: '1px solid #2a3456'
-  },
-  signalMeta: {
-    color: '#8892b0',
-    fontSize: '0.875rem',
-    marginBottom: '0.75rem'
-  },
-  signalAnalysis: {
-    color: '#ffffff',
-    fontSize: '0.875rem',
-    lineHeight: '1.6',
-    marginBottom: '1rem'
-  },
-  signalStats: {
+  signalsHeader: {
     display: 'flex',
-    gap: '1rem',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '2rem'
+  },
+  signalCount: {
+    backgroundColor: '#1e2444',
+    padding: '0.5rem 1rem',
+    borderRadius: '20px',
     fontSize: '0.875rem',
     color: '#8892b0'
   },
+  signalsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(500px, 1fr))',  // Increased from 400px
+    gap: '1.5rem'
+  },
+  signalCard: {
+    backgroundColor: '#151935',
+    border: '1px solid #2a3456',
+    borderRadius: '12px',
+    padding: '1.5rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem'
+  },
+  signalCardHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: '0.5rem'
+  },
+  signalTitleSection: {
+    flex: 1
+  },
+  signalCardTitle: {
+    fontSize: '1.25rem',
+    fontWeight: '600',
+    color: '#64ffda',
+    margin: '0 0 0.5rem 0'
+  },
+  symbolDirection: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem'
+  },
+  signalSymbol: {
+    fontSize: '0.875rem',
+    color: '#8892b0'
+  },
+  directionBadge: {
+    padding: '0.25rem 0.75rem',
+    borderRadius: '6px',
+    fontSize: '0.75rem',
+    fontWeight: 'bold'
+  },
+  signalTimestamp: {
+    fontSize: '0.875rem',
+    color: '#8892b0',
+    whiteSpace: 'nowrap'
+  },
+  analysisSection: {
+    backgroundColor: 'rgba(30, 36, 68, 0.5)',
+    padding: '1rem',
+    borderRadius: '8px',
+    marginTop: '0.5rem'
+  },
+  riskSection: {
+    backgroundColor: 'rgba(30, 36, 68, 0.5)',
+    padding: '1rem',
+    borderRadius: '8px'
+  },
+  sectionTitle: {
+    fontSize: '0.875rem',
+    fontWeight: '600',
+    color: '#5e9eff',
+    marginBottom: '0.5rem',
+    margin: '0 0 0.5rem 0'
+  },
+  analysisText: {
+    fontSize: '0.875rem',
+    color: '#ffffff',
+    lineHeight: '1.6',
+    margin: 0,
+    whiteSpace: 'pre-wrap'
+  },
+  riskText: {
+    fontSize: '0.875rem',
+    color: '#ffffff',
+    lineHeight: '1.6',
+    margin: 0,
+    whiteSpace: 'pre-wrap'
+  },
+  tradeDetailsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '0.75rem',
+    marginTop: '0.5rem'
+  },
+  detailItem: {
+    backgroundColor: 'rgba(30, 36, 68, 0.5)',
+    padding: '0.75rem',
+    borderRadius: '6px',
+    textAlign: 'center'
+  },
+  detailLabel: {
+    display: 'block',
+    fontSize: '0.75rem',
+    color: '#8892b0',
+    marginBottom: '0.25rem'
+  },
+  detailLabelStop: {
+    display: 'block',
+    fontSize: '0.75rem',
+    color: '#ff5e5e',
+    marginBottom: '0.25rem'
+  },
+  detailLabelProfit: {
+    display: 'block',
+    fontSize: '0.75rem',
+    color: '#64ffda',
+    marginBottom: '0.25rem'
+  },
+  detailValue: {
+    fontSize: '0.875rem',
+    fontWeight: '600',
+    color: '#ffffff'
+  },
+  pnlSection: {
+    backgroundColor: 'rgba(30, 36, 68, 0.5)',
+    padding: '1rem',
+    borderRadius: '8px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: '0.5rem'
+  },
+  pnlLabel: {
+    fontSize: '0.875rem',
+    color: '#8892b0',
+    fontWeight: '600'
+  },
+  pnlValue: {
+    fontSize: '1rem',
+    fontWeight: '700'
+  },
+  signalFooter: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: '0.5rem',
+    paddingTop: '1rem',
+    borderTop: '1px solid rgba(42, 52, 86, 0.5)'
+  },
+  statusBadge: {
+    padding: '0.25rem 0.75rem',
+    borderRadius: '20px',
+    fontSize: '0.75rem',
+    fontWeight: '600',
+    border: '1px solid',
+    textTransform: 'uppercase'
+  },
+  duration: {
+    fontSize: '0.75rem',
+    color: '#8892b0'
+  },
+    // MEMBERS TAB STYLES
   membersTab: {
     backgroundColor: '#151935',
     padding: '2rem',
@@ -1406,12 +1543,6 @@ const styles = {
     fontSize: '0.875rem',
     textAlign: 'center'
   },
-  statusBadge: {
-    padding: '0.25rem 0.75rem',
-    borderRadius: '20px',
-    fontSize: '0.875rem',
-    textAlign: 'center'
-  },
   actionBtn: {
     padding: '0.5rem 1rem',
     backgroundColor: 'transparent',
@@ -1421,6 +1552,8 @@ const styles = {
     fontSize: '0.875rem',
     cursor: 'pointer'
   },
+  
+  // ANALYTICS TAB STYLES
   analyticsTab: {
     backgroundColor: '#151935',
     padding: '2rem',
@@ -1463,6 +1596,8 @@ const styles = {
     padding: '0.75rem 0',
     borderBottom: '1px solid #2a3456'
   },
+  
+  // DROPDOWN STYLES
   dropdownContainer: {
     position: 'relative',
     display: 'inline-block'
@@ -1491,200 +1626,6 @@ const styles = {
     fontSize: '0.875rem',
     transition: 'background 0.2s',
     borderBottom: '1px solid #2a3456'
-  },
-  signalsHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '2rem'
-  },
-  
-  signalCount: {
-    backgroundColor: '#1e2444',
-    padding: '0.5rem 1rem',
-    borderRadius: '20px',
-    fontSize: '0.875rem',
-    color: '#8892b0'
-  },
-  
-  signalsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
-    gap: '1.5rem'
-  },
-  
-  signalCard: {
-    backgroundColor: '#151935',
-    border: '1px solid #2a3456',
-    borderRadius: '12px',
-    padding: '1.5rem',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1rem'
-  },
-  
-  signalCardHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: '0.5rem'
-  },
-  
-  signalTitleSection: {
-    flex: 1
-  },
-  
-  signalCardTitle: {
-    fontSize: '1.25rem',
-    fontWeight: '600',
-    color: '#64ffda',
-    margin: '0 0 0.5rem 0'
-  },
-  
-  symbolDirection: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem'
-  },
-  
-  signalSymbol: {
-    fontSize: '0.875rem',
-    color: '#8892b0'
-  },
-  
-  directionBadge: {
-    padding: '0.25rem 0.75rem',
-    borderRadius: '6px',
-    fontSize: '0.75rem',
-    fontWeight: 'bold'
-  },
-  
-  signalTimestamp: {
-    fontSize: '0.875rem',
-    color: '#8892b0',
-    whiteSpace: 'nowrap'
-  },
-  
-  analysisSection: {
-    backgroundColor: 'rgba(30, 36, 68, 0.5)',
-    padding: '1rem',
-    borderRadius: '8px',
-    marginTop: '0.5rem'
-  },
-  
-  riskSection: {
-    backgroundColor: 'rgba(30, 36, 68, 0.5)',
-    padding: '1rem',
-    borderRadius: '8px'
-  },
-  
-  sectionTitle: {
-    fontSize: '0.875rem',
-    fontWeight: '600',
-    color: '#5e9eff',
-    marginBottom: '0.5rem',
-    margin: '0 0 0.5rem 0'
-  },
-  
-  analysisText: {
-    fontSize: '0.875rem',
-    color: '#ffffff',
-    lineHeight: '1.6',
-    margin: 0,
-    whiteSpace: 'pre-wrap'
-  },
-  
-  riskText: {
-    fontSize: '0.875rem',
-    color: '#ffffff',
-    lineHeight: '1.6',
-    margin: 0,
-    whiteSpace: 'pre-wrap'
-  },
-  
-  tradeDetailsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '0.75rem',
-    marginTop: '0.5rem'
-  },
-  
-  detailItem: {
-    backgroundColor: 'rgba(30, 36, 68, 0.5)',
-    padding: '0.75rem',
-    borderRadius: '6px',
-    textAlign: 'center'
-  },
-  
-  detailLabel: {
-    display: 'block',
-    fontSize: '0.75rem',
-    color: '#8892b0',
-    marginBottom: '0.25rem'
-  },
-  
-  detailLabelStop: {
-    display: 'block',
-    fontSize: '0.75rem',
-    color: '#ff5e5e',
-    marginBottom: '0.25rem'
-  },
-  
-  detailLabelProfit: {
-    display: 'block',
-    fontSize: '0.75rem',
-    color: '#64ffda',
-    marginBottom: '0.25rem'
-  },
-  
-  detailValue: {
-    fontSize: '0.875rem',
-    fontWeight: '600',
-    color: '#ffffff'
-  },
-  
-  pnlSection: {
-    backgroundColor: 'rgba(30, 36, 68, 0.5)',
-    padding: '1rem',
-    borderRadius: '8px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: '0.5rem'
-  },
-  
-  pnlLabel: {
-    fontSize: '0.875rem',
-    color: '#8892b0',
-    fontWeight: '600'
-  },
-  
-  pnlValue: {
-    fontSize: '1rem',
-    fontWeight: '700'
-  },
-  
-  signalFooter: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: '0.5rem',
-    paddingTop: '1rem',
-    borderTop: '1px solid rgba(42, 52, 86, 0.5)'
-  },
-  
-  statusBadge: {
-    padding: '0.25rem 0.75rem',
-    borderRadius: '20px',
-    fontSize: '0.75rem',
-    fontWeight: '600',
-    border: '1px solid',
-    textTransform: 'uppercase'
-  },
-  
-  duration: {
-    fontSize: '0.75rem',
-    color: '#8892b0'
   }
 
 };
