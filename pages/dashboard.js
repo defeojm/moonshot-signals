@@ -178,8 +178,25 @@ export default function CustomerDashboard() {
     console.log('WebSocket connection status:', isConnected ? 'Connected' : 'Disconnected');
   }, [isConnected]);
 
-  const handleManageSubscription = () => {
+  const handleManageSubscription = async () => {
     setShowSubscription(true);
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(`${config.API_URL}/create-portal-session`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        window.location.href = data.url;
+      } else {
+        alert('Unable to open subscription management');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Failed to open subscription management');
+    }
   };
 
   const copyToClipboard = (signal) => {
