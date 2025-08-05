@@ -114,87 +114,236 @@ export default function AdminDashboard() {
 
   const fetchTrades = async () => {
     const token = localStorage.getItem('token');
+    console.log('🔍 Fetching trades...');
+    console.log('Token exists:', !!token);
+    console.log('API URL:', config.API_URL);
+    console.log('Full URL:', `${config.API_URL}/api/trades`);
+    
     try {
       const response = await fetch(`${config.API_URL}/api/trades`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
       
+      console.log('Response status:', response.status);
+      console.log('Response OK:', response.ok);
+      console.log('Response URL:', response.url);
+      
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response body:', errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
+      console.log('Trades data received:', data);
+      console.log('Is array:', Array.isArray(data));
+      console.log('Data length:', Array.isArray(data) ? data.length : 'N/A');
       
-      // Ensure we always set an array
       if (Array.isArray(data)) {
         setTrades(data);
+        console.log('✅ Trades set successfully');
       } else {
-        console.error('Expected array of trades, got:', data);
+        console.error('Expected array of trades, got:', typeof data, data);
         setTrades([]);
       }
     } catch (error) {
-      console.error('Error fetching trades:', error);
-      setTrades([]); // Set empty array on error
+      console.error('❌ Error fetching trades:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack
+      });
+      setTrades([]);
     }
   };
 
   const fetchStats = async () => {
     const token = localStorage.getItem('token');
+    console.log('🔍 Fetching stats...');
+    
     try {
       const response = await fetch(`${config.API_URL}/api/signals/performance/today`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
+      
+      console.log('Stats response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Stats error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
+      console.log('Stats data:', data);
       setStats(data);
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      console.error('❌ Error fetching stats:', error);
+      // Set default stats on error
+      setStats({
+        total_signals: 0,
+        total_pnl: 0,
+        winning_trades: 0,
+        losing_trades: 0,
+        win_rate: 0,
+        avg_rr: 0
+      });
     }
   };
 
   const fetchSubscriptionStats = async () => {
     const token = localStorage.getItem('token');
+    console.log('🔍 Fetching subscription stats...');
+    
     try {
       const response = await fetch(`${config.API_URL}/api/admin/subscription-stats`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
+      
+      console.log('Subscription stats response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('Subscription stats:', data);
         setSubscriptionStats(data);
+      } else {
+        const errorText = await response.text();
+        console.error('Subscription stats error:', errorText);
+        setSubscriptionStats({ activeCount: 0, mrr: 0 });
       }
     } catch (error) {
-      console.error('Error fetching subscription stats:', error);
+      console.error('❌ Error fetching subscription stats:', error);
+      setSubscriptionStats({ activeCount: 0, mrr: 0 });
     }
   };
 
   const fetchMembers = async () => {
     const token = localStorage.getItem('token');
+    console.log('🔍 Fetching members...');
+    
     try {
       const response = await fetch(`${config.API_URL}/api/admin/members`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
+      
+      console.log('Members response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        setMembers(data);
+        console.log('Members data:', data);
+        console.log('Members count:', Array.isArray(data) ? data.length : 'Not an array');
+        
+        if (Array.isArray(data)) {
+          setMembers(data);
+        } else {
+          console.error('Expected array of members, got:', typeof data);
+          setMembers([]);
+        }
+      } else {
+        const errorText = await response.text();
+        console.error('Members error:', errorText);
+        setMembers([]);
       }
     } catch (error) {
-      console.error('Error fetching members:', error);
+      console.error('❌ Error fetching members:', error);
+      setMembers([]);
     }
   };
 
   const fetchSignals = async () => {
     const token = localStorage.getItem('token');
+    console.log('🔍 Fetching signals...');
+    
     try {
       const response = await fetch(`${config.API_URL}/api/signals/all`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
+      
+      console.log('Signals response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        setSignals(data);
+        console.log('Signals data:', data);
+        console.log('Signals count:', Array.isArray(data) ? data.length : 'Not an array');
+        
+        if (Array.isArray(data)) {
+          setSignals(data);
+        } else {
+          console.error('Expected array of signals, got:', typeof data);
+          setSignals([]);
+        }
+      } else {
+        const errorText = await response.text();
+        console.error('Signals error:', errorText);
+        setSignals([]);
       }
     } catch (error) {
-      console.error('Error fetching signals:', error);
+      console.error('❌ Error fetching signals:', error);
+      setSignals([]);
     }
   };
+
+  useEffect(() => {
+    window.debugAPI = async () => {
+      const token = localStorage.getItem('token');
+      const user = localStorage.getItem('user');
+      
+      console.log('=== API Debug Info ===');
+      console.log('Token:', token ? `${token.substring(0, 20)}...` : 'Missing');
+      console.log('User:', user);
+      console.log('Config API URL:', config.API_URL);
+      console.log('Current URL:', window.location.href);
+      
+      // Test each endpoint
+      const endpoints = [
+        '/api/trades',
+        '/api/signals/all',
+        '/api/admin/members',
+        '/api/admin/subscription-stats',
+        '/api/signals/performance/today'
+      ];
+      
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`\nTesting ${endpoint}...`);
+          const response = await fetch(`${config.API_URL}${endpoint}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          console.log(`${endpoint} - Status:`, response.status);
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`${endpoint} - Success:`, data);
+          } else {
+            const error = await response.text();
+            console.log(`${endpoint} - Error:`, error);
+          }
+        } catch (error) {
+          console.error(`${endpoint} - Failed:`, error.message);
+        }
+      }
+    };
+    
+    console.log('💡 Debug function available: Run window.debugAPI() in console');
+  }, []);
 
   const publishSignal = async () => {
     if (!selectedTrade) return;
