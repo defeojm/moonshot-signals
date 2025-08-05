@@ -179,7 +179,6 @@ export default function CustomerDashboard() {
   }, [isConnected]);
 
   const handleManageSubscription = async () => {
-    setShowSubscription(true);
     const token = localStorage.getItem('token');
     try {
       const response = await fetch(`${config.API_URL}/create-portal-session`, {
