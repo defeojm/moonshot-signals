@@ -25,14 +25,14 @@ export default function ChatWidget({ user, token, ws }) {
   }, [isOpen]);
 
   const fetchMessages = async () => {
-    console.log('Fetching messages with token:', token); // Add this line
+    console.log('Fetching messages with token:', token);
     
     try {
       const response = await fetch(`${config.API_URL}/chat/messages`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      console.log('Fetch messages response:', response.status); // Add this line
+      console.log('Fetch messages response:', response.status);
       
       if (response.ok) {
         const data = await response.json();
@@ -50,7 +50,7 @@ export default function ChatWidget({ user, token, ws }) {
     e.preventDefault();
     if (!newMessage.trim() || isLoading) return;
 
-    console.log('Sending message with token:', token); // Add this line
+    console.log('Sending message with token:', token);
 
     setIsLoading(true);
     try {
@@ -63,7 +63,7 @@ export default function ChatWidget({ user, token, ws }) {
         body: JSON.stringify({ message: newMessage })
       });
       
-      console.log('Response status:', response.status); // Add this line
+      console.log('Response status:', response.status);
       
       if (response.ok) {
         const sentMessage = await response.json();
@@ -91,7 +91,7 @@ export default function ChatWidget({ user, token, ws }) {
     const handleMessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('User received WebSocket message:', data); // Add debug log
+        console.log('User received WebSocket message:', data);
         
         if (data.type === 'chat_message_for_user') {
           console.log('Message is for user ID:', data.data.userId, 'Current user ID:', user.id);
@@ -120,7 +120,7 @@ export default function ChatWidget({ user, token, ws }) {
 
   return (
     <>
-      <style jsx>{`
+      <style jsx global>{`
         @keyframes pulse {
           0% { transform: scale(1); }
           50% { transform: scale(1.05); }
@@ -149,14 +149,57 @@ export default function ChatWidget({ user, token, ws }) {
         }
       `}</style>
 
-      {/* Chat Button */}
+      {/* Chat Button - Fixed positioning */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        style={styles.chatButton}
+        style={{
+          position: 'fixed',
+          bottom: '32px',
+          right: '32px',
+          left: 'auto',
+          top: 'auto',
+          width: '60px',
+          height: '60px',
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, #5e9eff 0%, #4a8af4 100%)',
+          color: '#ffffff',
+          border: 'none',
+          fontSize: '24px',
+          cursor: 'pointer',
+          boxShadow: '0 4px 20px rgba(94, 158, 255, 0.4)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 0.3s ease',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'scale(1.1)';
+          e.currentTarget.style.boxShadow = '0 6px 30px rgba(94, 158, 255, 0.6)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = '0 4px 20px rgba(94, 158, 255, 0.4)';
+        }}
       >
-        <span style={styles.chatIcon}>💬</span>
+        <span style={{ animation: 'bounce 2s ease-in-out infinite' }}>💬</span>
         {messages.filter(m => m.is_admin && !m.read_by_user).length > 0 && (
-          <span style={styles.unreadBadge}>
+          <span style={{
+            position: 'absolute',
+            top: '-5px',
+            right: '-5px',
+            backgroundColor: '#ff5e5e',
+            color: '#ffffff',
+            borderRadius: '12px',
+            padding: '2px 8px',
+            fontSize: '12px',
+            fontWeight: '700',
+            minWidth: '20px',
+            textAlign: 'center',
+            boxShadow: '0 2px 8px rgba(255, 94, 94, 0.4)',
+            animation: 'pulse 2s ease-in-out infinite',
+          }}>
             {messages.filter(m => m.is_admin && !m.read_by_user).length}
           </span>
         )}
@@ -164,45 +207,172 @@ export default function ChatWidget({ user, token, ws }) {
 
       {/* Chat Window */}
       {isOpen && (
-        <div style={styles.chatWindow}>
-          <div style={styles.chatHeader}>
-            <div style={styles.headerLeft}>
-              <h3 style={styles.chatTitle}>VIP Support Chat</h3>
-              <span style={styles.statusIndicator}>
-                <span style={styles.statusDot}></span>
+        <div style={{
+          position: 'fixed',
+          bottom: '110px',
+          right: '32px',
+          left: 'auto',
+          top: 'auto',
+          width: '380px',
+          height: '550px',
+          backgroundColor: 'rgba(21, 25, 53, 0.95)',
+          backdropFilter: 'blur(20px)',
+          borderRadius: '16px',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          flexDirection: 'column',
+          zIndex: 1001,
+          border: '1px solid #2a3456',
+          animation: 'slideUp 0.3s ease-out',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        }}>
+          <div style={{
+            padding: '1.25rem',
+            borderBottom: '1px solid #2a3456',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            background: 'rgba(30, 36, 68, 0.5)',
+            borderRadius: '16px 16px 0 0',
+          }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.25rem',
+            }}>
+              <h3 style={{
+                margin: 0,
+                fontSize: '1.125rem',
+                fontWeight: '600',
+                color: '#ffffff',
+              }}>VIP Support Chat</h3>
+              <span style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.75rem',
+                color: '#64ffda',
+              }}>
+                <span style={{
+                  width: '6px',
+                  height: '6px',
+                  backgroundColor: '#64ffda',
+                  borderRadius: '50%',
+                  animation: 'pulse 2s ease-in-out infinite',
+                }}></span>
                 Online
               </span>
             </div>
-            <button onClick={() => setIsOpen(false)} style={styles.closeButton}>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
+            <button 
+              onClick={() => setIsOpen(false)} 
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#8892b0',
+                cursor: 'pointer',
+                padding: '0.5rem',
+                borderRadius: '8px',
+                transition: 'all 0.3s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '24px',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(136, 146, 176, 0.1)';
+                e.currentTarget.style.color = '#ffffff';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = '#8892b0';
+              }}
+            >
+              ×
             </button>
           </div>
 
-          <div style={styles.messagesContainer}>
+          <div style={{
+            flex: 1,
+            padding: '1.5rem',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem',
+            scrollBehavior: 'smooth',
+          }}>
             {messages.length === 0 ? (
-              <div style={styles.welcomeMessage}>
-                <span style={styles.welcomeIcon}>👋</span>
-                <p style={styles.noMessages}>Welcome to VIP Support!</p>
-                <p style={styles.welcomeSubtext}>How can we help you trade better today?</p>
+              <div style={{
+                textAlign: 'center',
+                padding: '3rem 2rem',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.5rem',
+              }}>
+                <span style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>👋</span>
+                <p style={{
+                  color: '#ffffff',
+                  fontSize: '1.125rem',
+                  fontWeight: '600',
+                  margin: 0,
+                }}>Welcome to VIP Support!</p>
+                <p style={{
+                  color: '#8892b0',
+                  fontSize: '0.875rem',
+                  margin: 0,
+                }}>How can we help you trade better today?</p>
               </div>
             ) : (
               messages.map((msg, index) => (
                 <div
                   key={index}
                   style={{
-                    ...styles.message,
-                    ...(msg.is_admin ? styles.adminMessage : styles.userMessage),
+                    display: 'flex',
+                    gap: '0.75rem',
+                    maxWidth: '85%',
+                    wordWrap: 'break-word',
+                    alignSelf: msg.is_admin ? 'flex-start' : 'flex-end',
+                    flexDirection: msg.is_admin ? 'row' : 'row-reverse',
                     animation: 'fadeIn 0.3s ease-out'
                   }}
                 >
                   {msg.is_admin && (
-                    <div style={styles.adminAvatar}>MS</div>
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      backgroundColor: '#5e9eff',
+                      color: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.75rem',
+                      fontWeight: '700',
+                      flexShrink: 0,
+                    }}>MS</div>
                   )}
-                  <div style={styles.messageWrapper}>
-                    <div style={styles.messageContent}>{msg.message}</div>
-                    <div style={styles.messageTime}>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.25rem',
+                  }}>
+                    <div style={{
+                      padding: '0.75rem 1rem',
+                      borderRadius: '12px',
+                      fontSize: '0.875rem',
+                      lineHeight: '1.5',
+                      backgroundColor: msg.is_admin ? 'rgba(94, 158, 255, 0.1)' : '#1e2444',
+                      color: '#ffffff',
+                      border: msg.is_admin ? '1px solid rgba(94, 158, 255, 0.3)' : 'none',
+                    }}>
+                      {msg.message}
+                    </div>
+                    <div style={{
+                      fontSize: '0.625rem',
+                      color: '#5a6378',
+                      paddingLeft: '0.5rem',
+                      paddingRight: '0.5rem',
+                    }}>
                       {new Date(msg.created_at).toLocaleTimeString([], { 
                         hour: '2-digit', 
                         minute: '2-digit' 
@@ -215,30 +385,62 @@ export default function ChatWidget({ user, token, ws }) {
             <div ref={messagesEndRef} />
           </div>
 
-          <form onSubmit={sendMessage} style={styles.inputForm}>
+          <form 
+            onSubmit={sendMessage} 
+            style={{
+              padding: '1rem',
+              borderTop: '1px solid #2a3456',
+              display: 'flex',
+              gap: '0.75rem',
+              background: 'rgba(30, 36, 68, 0.5)',
+              borderRadius: '0 0 16px 16px',
+            }}
+          >
             <input
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Type your message..."
-              style={styles.input}
+              style={{
+                flex: 1,
+                padding: '0.75rem 1rem',
+                backgroundColor: '#1e2444',
+                border: '2px solid #2a3456',
+                borderRadius: '8px',
+                color: '#ffffff',
+                fontSize: '0.875rem',
+                outline: 'none',
+                transition: 'all 0.3s',
+                fontFamily: 'inherit',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#5e9eff';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#2a3456';
+              }}
               disabled={isLoading}
             />
             <button 
               type="submit" 
               style={{
-                ...styles.sendButton,
-                ...(isLoading || !newMessage.trim() ? styles.sendButtonDisabled : {})
-              }} 
+                padding: '0.75rem 1rem',
+                backgroundColor: isLoading || !newMessage.trim() ? '#3a4a6b' : '#5e9eff',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: isLoading || !newMessage.trim() ? 'not-allowed' : 'pointer',
+                fontSize: '1rem',
+                transition: 'all 0.3s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minWidth: '44px',
+                opacity: isLoading || !newMessage.trim() ? 0.5 : 1,
+              }}
               disabled={isLoading || !newMessage.trim()}
             >
-              {isLoading ? (
-                <span style={styles.loadingDot}></span>
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M2 10L17 2L13 10L17 18L2 10Z" fill="currentColor"/>
-                </svg>
-              )}
+              {isLoading ? '...' : '➤'}
             </button>
           </form>
         </div>
@@ -265,13 +467,8 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
     transition: 'all 0.3s ease',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    '&:hover': {
-      transform: 'scale(1.1)',
-      boxShadow: '0 6px 30px rgba(94, 158, 255, 0.6)',
-    }
   },
   
   chatIcon: {
