@@ -378,55 +378,6 @@ export default function PerformancePage() {
         </div>
       </section>
 
-      {/* Recent Trades Table */}
-      <section style={styles.tradesSection}>
-        <h2 style={styles.sectionTitle}>Recent Trading Activity</h2>
-        <div style={styles.tradesCard} className="glass-card animate-fade-in">
-          <div style={styles.tradesTable}>
-            <div style={styles.tableHeader}>
-              <div style={styles.tableCell}>Date</div>
-              <div style={styles.tableCell}>Pair</div>
-              <div style={styles.tableCell}>Direction</div>
-              <div style={styles.tableCell}>Entry</div>
-              <div style={styles.tableCell}>Exit</div>
-              <div style={styles.tableCell}>P&L</div>
-              <div style={styles.tableCell}>ROI</div>
-            </div>
-            {recentTrades.slice(0, 10).map((trade, index) => (
-              <div 
-                key={trade.id || index} 
-                style={{...styles.tableRow, animationDelay: `${index * 0.05}s`}} 
-                className="hover-lift animate-slide-in"
-              >
-                <div style={styles.tableCell}>
-                  {new Date(trade.closed_at || trade.opened_at).toLocaleDateString()}
-                </div>
-                <div style={styles.tableCell}>{trade.symbol}</div>
-                <div style={styles.tableCell}>
-                  <span style={trade.direction === 'buy' ? styles.buyBadge : styles.sellBadge}>
-                    {trade.direction === 'buy' ? 'LONG' : 'SHORT'}
-                  </span>
-                </div>
-                <div style={styles.tableCell}>{formatCurrency(trade.entry_price)}</div>
-                <div style={styles.tableCell}>{formatCurrency(trade.exit_price || trade.entry_price)}</div>
-                <div style={{...styles.tableCell, color: trade.pnl > 0 ? '#64ffda' : '#ff5e5e'}}>
-                  {formatCurrency(trade.pnl || 0)}
-                </div>
-                <div style={{...styles.tableCell, color: trade.pnl > 0 ? '#64ffda' : '#ff5e5e'}}>
-                  {trade.pnl ? `${((trade.pnl / (trade.entry_price * trade.size)) * 100).toFixed(2)}%` : '0%'}
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          {recentTrades.length === 0 && (
-            <div style={styles.emptyState}>
-              <p>Loading recent trades...</p>
-            </div>
-          )}
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section style={styles.ctaSection}>
         <h2 style={styles.ctaTitle} className="gradient-text">
