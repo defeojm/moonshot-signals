@@ -266,7 +266,7 @@ export default function AdminDashboard() {
     console.log('🔍 Fetching signals...');
     
     try {
-      const response = await fetch(`${config.API_URL}/api/signals/all`, {
+      const response = await fetch(`${config.API_URL}/signals/all`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
