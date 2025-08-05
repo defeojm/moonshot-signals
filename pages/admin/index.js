@@ -3,18 +3,20 @@ import { useRouter } from 'next/router';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import AdminChat from '../../components/AdminChat';
 import config from '../../utils/config';
+
 export const getServerSideProps = async () => {
   return {
     props: {},
   };
 };
+
 export default function AdminDashboard() {
   const [user, setUser] = useState(null);
   const [trades, setTrades] = useState([]);
   const [stats, setStats] = useState(null);
   const [subscriptionStats, setSubscriptionStats] = useState({ activeCount: 0, mrr: 0 });
   const [selectedTrade, setSelectedTrade] = useState(null);
-  const [activeTab, setActiveTab] = useState('trades'); // New state for tabs
+  const [activeTab, setActiveTab] = useState('trades');
   const [members, setMembers] = useState([]);
   const [signals, setSignals] = useState([]);
   const [signalForm, setSignalForm] = useState({
@@ -76,6 +78,7 @@ export default function AdminDashboard() {
       alert('Failed to send test notification. Check console for details.');
     }
   };
+
   // Connect to WebSocket
   const { isConnected, ws } = useWebSocket(handleWebSocketMessage);
 
@@ -115,9 +118,6 @@ export default function AdminDashboard() {
   const fetchTrades = async () => {
     const token = localStorage.getItem('token');
     console.log('🔍 Fetching trades...');
-    console.log('Token exists:', !!token);
-    console.log('API URL:', config.API_URL);
-    console.log('Full URL:', `${config.API_URL}/trades`);
     
     try {
       const response = await fetch(`${config.API_URL}/trades`, {
@@ -127,10 +127,6 @@ export default function AdminDashboard() {
         }
       });
       
-      console.log('Response status:', response.status);
-      console.log('Response OK:', response.ok);
-      console.log('Response URL:', response.url);
-      
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Error response body:', errorText);
@@ -139,8 +135,6 @@ export default function AdminDashboard() {
       
       const data = await response.json();
       console.log('Trades data received:', data);
-      console.log('Is array:', Array.isArray(data));
-      console.log('Data length:', Array.isArray(data) ? data.length : 'N/A');
       
       if (Array.isArray(data)) {
         setTrades(data);
@@ -151,10 +145,6 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('❌ Error fetching trades:', error);
-      console.error('Error details:', {
-        message: error.message,
-        stack: error.stack
-      });
       setTrades([]);
     }
   };
@@ -170,8 +160,6 @@ export default function AdminDashboard() {
           'Content-Type': 'application/json'
         }
       });
-      
-      console.log('Stats response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -208,8 +196,6 @@ export default function AdminDashboard() {
         }
       });
       
-      console.log('Subscription stats response status:', response.status);
-      
       if (response.ok) {
         const data = await response.json();
         console.log('Subscription stats:', data);
@@ -237,12 +223,9 @@ export default function AdminDashboard() {
         }
       });
       
-      console.log('Members response status:', response.status);
-      
       if (response.ok) {
         const data = await response.json();
         console.log('Members data:', data);
-        console.log('Members count:', Array.isArray(data) ? data.length : 'Not an array');
         
         if (Array.isArray(data)) {
           setMembers(data);
@@ -273,12 +256,9 @@ export default function AdminDashboard() {
         }
       });
       
-      console.log('Signals response status:', response.status);
-      
       if (response.ok) {
         const data = await response.json();
         console.log('Signals data:', data);
-        console.log('Signals count:', Array.isArray(data) ? data.length : 'Not an array');
         
         if (Array.isArray(data)) {
           setSignals(data);
@@ -296,54 +276,6 @@ export default function AdminDashboard() {
       setSignals([]);
     }
   };
-
-  useEffect(() => {
-    window.debugAPI = async () => {
-      const token = localStorage.getItem('token');
-      const user = localStorage.getItem('user');
-      
-      console.log('=== API Debug Info ===');
-      console.log('Token:', token ? `${token.substring(0, 20)}...` : 'Missing');
-      console.log('User:', user);
-      console.log('Config API URL:', config.API_URL);
-      console.log('Current URL:', window.location.href);
-      
-      // Test each endpoint
-      const endpoints = [
-        '/api/trades',
-        '/api/signals/all',
-        '/api/admin/members',
-        '/api/admin/subscription-stats',
-        '/api/signals/performance/today'
-      ];
-      
-      for (const endpoint of endpoints) {
-        try {
-          console.log(`\nTesting ${endpoint}...`);
-          const response = await fetch(`${config.API_URL}${endpoint}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          console.log(`${endpoint} - Status:`, response.status);
-          
-          if (response.ok) {
-            const data = await response.json();
-            console.log(`${endpoint} - Success:`, data);
-          } else {
-            const error = await response.text();
-            console.log(`${endpoint} - Error:`, error);
-          }
-        } catch (error) {
-          console.error(`${endpoint} - Failed:`, error.message);
-        }
-      }
-    };
-    
-    console.log('💡 Debug function available: Run window.debugAPI() in console');
-  }, []);
 
   const publishSignal = async () => {
     if (!selectedTrade) return;
@@ -429,6 +361,7 @@ export default function AdminDashboard() {
       console.error('Error creating trade:', error);
     }
   };
+
   const activateSubscription = async (userId, plan) => {
     const token = localStorage.getItem('token');
     try {
@@ -443,8 +376,8 @@ export default function AdminDashboard() {
       
       if (response.ok) {
         alert('Subscription activated successfully!');
-        fetchMembers(); // Refresh the member list
-        fetchSubscriptionStats(); // Update stats
+        fetchMembers();
+        fetchSubscriptionStats();
       } else {
         alert('Failed to activate subscription');
       }
@@ -453,6 +386,7 @@ export default function AdminDashboard() {
       alert('Error activating subscription');
     }
   };
+
   const closeTrade = async (tradeId, exitPrice) => {
     const token = localStorage.getItem('token');
     try {
@@ -511,7 +445,7 @@ export default function AdminDashboard() {
         </div>
         <div style={styles.statItem}>
           <div style={styles.statValue}>${stats?.total_pnl?.toFixed(2) || '0.00'}</div>
-          <div style={styles.statLabel}>Today&apos;s P&L</div>
+          <div style={styles.statLabel}>Today's P&L</div>
         </div>
       </div>
 
@@ -742,33 +676,32 @@ export default function AdminDashboard() {
             <div style={styles.signalsGrid}>
               {signals.map(signal => (
                 <div key={signal.id} style={styles.signalCard}>
-                  {/* Signal Header with Title and Date */}
+                  {/* Signal Header */}
                   <div style={styles.signalCardHeader}>
-                    <div style={styles.signalTitleSection}>
-                      <h3 style={styles.signalCardTitle}>{signal.title || 'Untitled Signal'}</h3>
-                      {signal.Trade && (
-                        <div style={styles.symbolDirection}>
-                          <span style={styles.signalSymbol}>{signal.Trade.symbol}</span>
-                          <span style={{
-                            ...styles.directionBadge,
-                            backgroundColor: signal.Trade.direction === 'BUY' ? 'rgba(100, 255, 218, 0.2)' : 'rgba(255, 94, 94, 0.2)',
-                            color: signal.Trade.direction === 'BUY' ? '#64ffda' : '#ff5e5e'
-                          }}>
-                            {signal.Trade.direction === 'BUY' ? 'LONG' : 'SHORT'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                    <h3 style={styles.signalCardTitle}>{signal.title || 'Untitled Signal'}</h3>
                     <span style={styles.signalTimestamp}>
                       {new Date(signal.createdAt).toLocaleDateString('en-US', { 
                         month: 'short',
-                        day: 'numeric'
-                      })}, {new Date(signal.createdAt).toLocaleTimeString('en-US', {
+                        day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
                     </span>
                   </div>
+
+                  {/* Trade Symbol and Direction */}
+                  {signal.Trade && (
+                    <div style={styles.symbolDirectionRow}>
+                      <span style={styles.signalSymbol}>{signal.Trade.symbol}</span>
+                      <span style={{
+                        ...styles.directionBadge,
+                        backgroundColor: signal.Trade.direction === 'BUY' ? 'rgba(100, 255, 218, 0.2)' : 'rgba(255, 94, 94, 0.2)',
+                        color: signal.Trade.direction === 'BUY' ? '#64ffda' : '#ff5e5e'
+                      }}>
+                        {signal.Trade.direction === 'BUY' ? 'LONG' : 'SHORT'}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Analysis Section */}
                   {signal.analysis && (
@@ -790,9 +723,16 @@ export default function AdminDashboard() {
                   {signal.Trade && (
                     <div style={styles.tradeDetailsGrid}>
                       <div style={styles.detailItem}>
-                        <span style={styles.detailLabel}>Entry</span>
+                        <span style={styles.detailLabel}>Entry Price</span>
                         <span style={styles.detailValue}>${parseFloat(signal.Trade.entry_price).toFixed(2)}</span>
                       </div>
+                      
+                      {signal.Trade.exit_price && (
+                        <div style={styles.detailItem}>
+                          <span style={styles.detailLabel}>Exit Price</span>
+                          <span style={styles.detailValue}>${parseFloat(signal.Trade.exit_price).toFixed(2)}</span>
+                        </div>
+                      )}
                       
                       {signal.stop_loss && (
                         <div style={styles.detailItem}>
@@ -805,13 +745,6 @@ export default function AdminDashboard() {
                         <div style={styles.detailItem}>
                           <span style={styles.detailLabelProfit}>Take Profit</span>
                           <span style={styles.detailValue}>${parseFloat(signal.take_profit).toFixed(2)}</span>
-                        </div>
-                      )}
-                      
-                      {signal.Trade.exit_price && (
-                        <div style={styles.detailItem}>
-                          <span style={styles.detailLabel}>Exit</span>
-                          <span style={styles.detailValue}>${parseFloat(signal.Trade.exit_price).toFixed(2)}</span>
                         </div>
                       )}
                       
@@ -830,7 +763,7 @@ export default function AdminDashboard() {
                   {/* P&L Section if trade is closed */}
                   {signal.Trade && signal.Trade.pnl && (
                     <div style={styles.pnlSection}>
-                      <span style={styles.pnlLabel}>P&L</span>
+                      <span style={styles.pnlLabel}>P&L Result</span>
                       <span style={{
                         ...styles.pnlValue,
                         color: parseFloat(signal.Trade.pnl) > 0 ? '#64ffda' : '#ff5e5e'
@@ -841,18 +774,24 @@ export default function AdminDashboard() {
                     </div>
                   )}
 
-                  {/* Status Badge */}
+                  {/* Signal Footer with Status and Duration */}
                   <div style={styles.signalFooter}>
                     <span style={{
                       ...styles.statusBadge,
-                      backgroundColor: signal.Trade?.status === 'OPEN' ? 'rgba(94, 158, 255, 0.2)' : 'rgba(136, 146, 176, 0.2)',
-                      color: signal.Trade?.status === 'OPEN' ? '#5e9eff' : '#8892b0',
-                      borderColor: signal.Trade?.status === 'OPEN' ? '#5e9eff' : '#8892b0'
+                      backgroundColor: signal.Trade?.status === 'OPEN' ? 'rgba(94, 158, 255, 0.2)' : 
+                                     signal.Trade?.status === 'CLOSED' ? 'rgba(136, 146, 176, 0.2)' : 
+                                     'rgba(255, 94, 94, 0.2)',
+                      color: signal.Trade?.status === 'OPEN' ? '#5e9eff' : 
+                             signal.Trade?.status === 'CLOSED' ? '#8892b0' : 
+                             '#ff5e5e',
+                      borderColor: signal.Trade?.status === 'OPEN' ? '#5e9eff' : 
+                                  signal.Trade?.status === 'CLOSED' ? '#8892b0' : 
+                                  '#ff5e5e'
                     }}>
-                      {signal.Trade?.status || 'CLOSED'}
+                      {signal.Trade?.status || 'NO TRADE DATA'}
                     </span>
                     
-                    {signal.Trade?.closed_at && (
+                    {signal.Trade?.closed_at && signal.Trade?.opened_at && (
                       <span style={styles.duration}>
                         Duration: {calculateDuration(signal.Trade.opened_at, signal.Trade.closed_at)}
                       </span>
@@ -863,7 +802,6 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
-
 
         {activeTab === 'members' && (
           <div style={styles.membersTab}>
@@ -1041,6 +979,7 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
 function calculateDuration(openTime, closeTime) {
   const duration = new Date(closeTime) - new Date(openTime);
   const hours = Math.floor(duration / (1000 * 60 * 60));
@@ -1052,8 +991,7 @@ function calculateDuration(openTime, closeTime) {
   return `${minutes}m`;
 }
 
-
-// Styles remain the same
+// Enhanced Styles
 const styles = {
   container: {
     minHeight: '100vh',
@@ -1334,9 +1272,9 @@ const styles = {
     cursor: 'pointer'
   },
   
-  // UPDATED SIGNALS SECTION STYLES
+  // ENHANCED SIGNALS SECTION STYLES
   signalsTab: {
-    padding: '2rem'  // Removed the background and border
+    padding: '2rem'
   },
   signalsHeader: {
     display: 'flex',
@@ -1353,159 +1291,185 @@ const styles = {
   },
   signalsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(500px, 1fr))',  // Increased from 400px
-    gap: '1.5rem'
+    gridTemplateColumns: 'repeat(auto-fill, minmax(600px, 1fr))',
+    gap: '2rem'
   },
   signalCard: {
     backgroundColor: '#151935',
     border: '1px solid #2a3456',
     borderRadius: '12px',
-    padding: '1.5rem',
+    padding: '2rem',
     display: 'flex',
     flexDirection: 'column',
-    gap: '1rem'
+    gap: '1.5rem',
+    transition: 'all 0.3s',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
   },
   signalCardHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: '0.5rem'
-  },
-  signalTitleSection: {
-    flex: 1
+    marginBottom: '0.5rem',
+    borderBottom: '1px solid #2a3456',
+    paddingBottom: '1rem'
   },
   signalCardTitle: {
-    fontSize: '1.25rem',
-    fontWeight: '600',
+    fontSize: '1.5rem',
+    fontWeight: '700',
     color: '#64ffda',
-    margin: '0 0 0.5rem 0'
+    margin: '0',
+    lineHeight: '1.2'
   },
-  symbolDirection: {
+  symbolDirectionRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.5rem'
+    gap: '1rem',
+    marginTop: '-0.5rem'
   },
   signalSymbol: {
-    fontSize: '0.875rem',
-    color: '#8892b0'
+    fontSize: '1.125rem',
+    fontWeight: '600',
+    color: '#ffffff'
   },
   directionBadge: {
-    padding: '0.25rem 0.75rem',
-    borderRadius: '6px',
-    fontSize: '0.75rem',
-    fontWeight: 'bold'
+    padding: '0.5rem 1rem',
+    borderRadius: '8px',
+    fontSize: '0.875rem',
+    fontWeight: 'bold',
+    textTransform: 'uppercase'
   },
   signalTimestamp: {
     fontSize: '0.875rem',
     color: '#8892b0',
-    whiteSpace: 'nowrap'
+    whiteSpace: 'nowrap',
+    fontStyle: 'italic'
   },
   analysisSection: {
-    backgroundColor: 'rgba(30, 36, 68, 0.5)',
-    padding: '1rem',
-    borderRadius: '8px',
-    marginTop: '0.5rem'
+    backgroundColor: 'rgba(30, 36, 68, 0.7)',
+    padding: '1.5rem',
+    borderRadius: '10px',
+    border: '1px solid rgba(94, 158, 255, 0.2)'
   },
   riskSection: {
-    backgroundColor: 'rgba(30, 36, 68, 0.5)',
-    padding: '1rem',
-    borderRadius: '8px'
+    backgroundColor: 'rgba(30, 36, 68, 0.7)',
+    padding: '1.5rem',
+    borderRadius: '10px',
+    border: '1px solid rgba(255, 212, 100, 0.2)'
   },
   sectionTitle: {
-    fontSize: '0.875rem',
-    fontWeight: '600',
+    fontSize: '1rem',
+    fontWeight: '700',
     color: '#5e9eff',
-    marginBottom: '0.5rem',
-    margin: '0 0 0.5rem 0'
+    marginBottom: '0.75rem',
+    margin: '0 0 0.75rem 0',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
   },
   analysisText: {
-    fontSize: '0.875rem',
+    fontSize: '0.9375rem',
     color: '#ffffff',
-    lineHeight: '1.6',
+    lineHeight: '1.8',
     margin: 0,
     whiteSpace: 'pre-wrap'
   },
   riskText: {
-    fontSize: '0.875rem',
+    fontSize: '0.9375rem',
     color: '#ffffff',
-    lineHeight: '1.6',
+    lineHeight: '1.8',
     margin: 0,
     whiteSpace: 'pre-wrap'
   },
   tradeDetailsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '0.75rem',
-    marginTop: '0.5rem'
+    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+    gap: '1rem',
+    marginTop: '1rem'
   },
   detailItem: {
     backgroundColor: 'rgba(30, 36, 68, 0.5)',
-    padding: '0.75rem',
-    borderRadius: '6px',
-    textAlign: 'center'
+    padding: '1rem',
+    borderRadius: '8px',
+    textAlign: 'center',
+    border: '1px solid rgba(42, 52, 86, 0.5)',
+    transition: 'all 0.2s'
   },
   detailLabel: {
     display: 'block',
-    fontSize: '0.75rem',
+    fontSize: '0.8125rem',
     color: '#8892b0',
-    marginBottom: '0.25rem'
+    marginBottom: '0.5rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
   },
   detailLabelStop: {
     display: 'block',
-    fontSize: '0.75rem',
+    fontSize: '0.8125rem',
     color: '#ff5e5e',
-    marginBottom: '0.25rem'
+    marginBottom: '0.5rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+    fontWeight: '600'
   },
   detailLabelProfit: {
     display: 'block',
-    fontSize: '0.75rem',
+    fontSize: '0.8125rem',
     color: '#64ffda',
-    marginBottom: '0.25rem'
+    marginBottom: '0.5rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+    fontWeight: '600'
   },
   detailValue: {
-    fontSize: '0.875rem',
-    fontWeight: '600',
+    fontSize: '1.125rem',
+    fontWeight: '700',
     color: '#ffffff'
   },
   pnlSection: {
-    backgroundColor: 'rgba(30, 36, 68, 0.5)',
-    padding: '1rem',
-    borderRadius: '8px',
+    backgroundColor: 'rgba(30, 36, 68, 0.7)',
+    padding: '1.5rem',
+    borderRadius: '10px',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: '0.5rem'
+    marginTop: '0.5rem',
+    border: '1px solid rgba(100, 255, 218, 0.2)'
   },
   pnlLabel: {
-    fontSize: '0.875rem',
+    fontSize: '1rem',
     color: '#8892b0',
-    fontWeight: '600'
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
   },
   pnlValue: {
-    fontSize: '1rem',
-    fontWeight: '700'
+    fontSize: '1.25rem',
+    fontWeight: '700',
+    letterSpacing: '0.5px'
   },
   signalFooter: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: '0.5rem',
-    paddingTop: '1rem',
-    borderTop: '1px solid rgba(42, 52, 86, 0.5)'
+    marginTop: '1rem',
+    paddingTop: '1.5rem',
+    borderTop: '2px solid rgba(42, 52, 86, 0.5)'
   },
   statusBadge: {
-    padding: '0.25rem 0.75rem',
-    borderRadius: '20px',
-    fontSize: '0.75rem',
-    fontWeight: '600',
-    border: '1px solid',
-    textTransform: 'uppercase'
+    padding: '0.5rem 1rem',
+    borderRadius: '25px',
+    fontSize: '0.8125rem',
+    fontWeight: '700',
+    border: '2px solid',
+    textTransform: 'uppercase',
+    letterSpacing: '1px'
   },
   duration: {
-    fontSize: '0.75rem',
-    color: '#8892b0'
+    fontSize: '0.875rem',
+    color: '#8892b0',
+    fontStyle: 'italic'
   },
-    // MEMBERS TAB STYLES
+  
+  // MEMBERS TAB STYLES
   membersTab: {
     backgroundColor: '#151935',
     padding: '2rem',
@@ -1627,5 +1591,4 @@ const styles = {
     transition: 'background 0.2s',
     borderBottom: '1px solid #2a3456'
   }
-
 };
