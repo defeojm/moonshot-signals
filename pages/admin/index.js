@@ -587,21 +587,29 @@ export default function AdminDashboard() {
                       style={styles.input}
                     />
                     
-                    <div style={styles.priceInputs}>
-                      <input
-                        type="number"
-                        placeholder="Stop Loss"
-                        value={signalForm.stop_loss}
-                        onChange={(e) => setSignalForm({...signalForm, stop_loss: e.target.value})}
-                        style={styles.input}
-                      />
-                      <input
-                        type="number"
-                        placeholder="Take Profit"
-                        value={signalForm.take_profit}
-                        onChange={(e) => setSignalForm({...signalForm, take_profit: e.target.value})}
-                        style={styles.input}
-                      />
+                    <div style={styles.priceInputsLabeled}>
+                      <div style={styles.inputGroup}>
+                        <label style={styles.inputLabel}>Stop Loss Price</label>
+                        <input
+                          type="number"
+                          placeholder="e.g., 65000"
+                          value={signalForm.stop_loss}
+                          onChange={(e) => setSignalForm({...signalForm, stop_loss: e.target.value})}
+                          style={{...styles.input, marginBottom: 0}}
+                          step="0.01"
+                        />
+                      </div>
+                      <div style={styles.inputGroup}>
+                        <label style={styles.inputLabel}>Take Profit Price</label>
+                        <input
+                          type="number"
+                          placeholder="e.g., 68000"
+                          value={signalForm.take_profit}
+                          onChange={(e) => setSignalForm({...signalForm, take_profit: e.target.value})}
+                          style={{...styles.input, marginBottom: 0}}
+                          step="0.01"
+                        />
+                      </div>
                     </div>
                     
                     <button onClick={publishSignal} style={styles.publishBtn}>
@@ -1222,7 +1230,9 @@ const styles = {
     border: '1px solid #2a3456',
     borderRadius: '6px',
     color: '#ffffff',
-    marginBottom: '0.75rem'
+    marginBottom: '0.75rem',
+    fontSize: '0.875rem',
+    transition: 'border-color 0.3s, background-color 0.3s'
   },
   textarea: {
     width: '100%',
@@ -1238,6 +1248,23 @@ const styles = {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     gap: '0.75rem'
+  },
+  priceInputsLabeled: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '0.75rem',
+    marginBottom: '1rem'
+  },
+  inputGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.25rem'
+  },
+  inputLabel: {
+    fontSize: '0.8125rem',
+    color: '#8892b0',
+    fontWeight: '500',
+    marginLeft: '0.25rem'
   },
   publishBtn: {
     width: '100%',
