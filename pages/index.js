@@ -1,6 +1,5 @@
 import { useRouter } from 'next/router';
 import { useState, useEffect, useRef } from 'react';
-import io from 'socket.io-client';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -14,34 +13,37 @@ export default function LandingPage() {
   const [memberCount, setMemberCount] = useState(23);
   const [isConnected, setIsConnected] = useState(false);
   const [newTradeAlert, setNewTradeAlert] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const wsRef = useRef(null);
 
   useEffect(() => {
     // Fetch initial data
     fetchInitialData();
 
-    // Setup WebSocket connection for public updates (no auth required for landing page)
+    // Setup WebSocket connection for public updates
     connectWebSocket();
 
-    // Cleanup on unmount
+    // Close mobile menu on route change
+    const handleRouteChange = () => setMobileMenuOpen(false);
+    router.events.on('routeChangeStart', handleRouteChange);
+
+    // Cleanup
     return () => {
       if (wsRef.current) {
         wsRef.current.close();
       }
+      router.events.off('routeChangeStart', handleRouteChange);
     };
   }, []);
 
   const connectWebSocket = () => {
     try {
-      // For landing page, we'll use a public WebSocket endpoint
-      // Your backend should handle unauthenticated connections for public data
       const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:5000';
       const ws = new WebSocket(wsUrl + '/public');
 
       ws.onopen = () => {
         console.log('WebSocket connected');
         setIsConnected(true);
-        // Request initial data
         ws.send(JSON.stringify({ type: 'request_public_data' }));
       };
 
@@ -61,20 +63,18 @@ export default function LandingPage() {
       ws.onclose = () => {
         console.log('WebSocket disconnected');
         setIsConnected(false);
-        // Attempt to reconnect after 5 seconds
         setTimeout(connectWebSocket, 5000);
       };
 
       wsRef.current = ws;
     } catch (error) {
       console.error('Error connecting to WebSocket:', error);
-      // Fall back to polling
       setInterval(fetchInitialData, 30000);
     }
   };
 
   const handleWebSocketMessage = (message) => {
-    const { type, data, timestamp } = message;
+    const { type, data } = message;
 
     switch (type) {
       case 'connected':
@@ -90,7 +90,6 @@ export default function LandingPage() {
         break;
 
       case 'new_signal':
-        // Show notification for new signal
         if (data.symbol && data.direction) {
           setNewTradeAlert({
             symbol: data.symbol,
@@ -110,38 +109,29 @@ export default function LandingPage() {
         break;
 
       case 'public_data':
-        // Handle initial data response
         if (data.trades) setRecentTrades(data.trades.slice(0, 6));
         if (data.stats) updateStats(data.stats);
         if (data.memberCount) setMemberCount(data.memberCount);
         break;
-
-      default:
-        console.log('Unknown message type:', type);
     }
   };
 
   const fetchInitialData = async () => {
     try {
-      const headers = {
-        'Content-Type': 'application/json',
-      };
+      const headers = { 'Content-Type': 'application/json' };
 
-      // Fetch recent trades
       const tradesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/trades/public`, { headers }).catch(() => null);
       if (tradesRes?.ok) {
         const trades = await tradesRes.json();
         setRecentTrades(trades.slice(0, 6));
       }
 
-      // Fetch stats
       const statsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/analytics?period=90`, { headers }).catch(() => null);
       if (statsRes?.ok) {
         const data = await statsRes.json();
         updateStats(data.tradeStats);
       }
 
-      // Fetch member count
       const membersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/subscription-stats`, { headers }).catch(() => null);
       if (membersRes?.ok) {
         const data = await membersRes.json();
@@ -153,13 +143,11 @@ export default function LandingPage() {
   };
 
   const handleNewTrade = (trade) => {
-    // Add new trade to the beginning with animation
     setRecentTrades(prev => {
       const filtered = prev.filter(t => t.id !== trade.id);
       return [trade, ...filtered].slice(0, 6);
     });
     
-    // Show notification
     if (trade.symbol && trade.direction) {
       setNewTradeAlert({
         symbol: trade.symbol,
@@ -211,7 +199,6 @@ export default function LandingPage() {
     return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
   };
 
-  // Default demo trades for display
   const demoTrades = [
     {
       id: 'demo1',
@@ -253,6 +240,21 @@ export default function LandingPage() {
 
   const displayTrades = recentTrades.length > 0 ? recentTrades : demoTrades;
 
+  const scrollToSection = (sectionId) => {
+    setMobileMenuOpen(false);
+    const element = document.getElementById(sectionId);
+    if (element) {
+      const offset = 80; // Height of fixed nav
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
     <div style={styles.container}>
       <style jsx global>{`
@@ -262,6 +264,14 @@ export default function LandingPage() {
           box-sizing: border-box;
         }
 
+        html {
+          scroll-behavior: smooth;
+        }
+
+        body {
+          overflow-x: hidden;
+        }
+
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
@@ -269,6 +279,11 @@ export default function LandingPage() {
 
         @keyframes slideInRight {
           from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideInLeft {
+          from { transform: translateX(-100%); opacity: 0; }
           to { transform: translateX(0); opacity: 1; }
         }
 
@@ -406,58 +421,199 @@ export default function LandingPage() {
           animation: slideInRight 0.5s ease-out;
         }
 
+        /* Mobile Menu Overlay */
+        .mobile-menu-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: 998;
+          opacity: 0;
+          visibility: hidden;
+          transition: all 0.3s ease;
+        }
+
+        .mobile-menu-overlay.active {
+          opacity: 1;
+          visibility: visible;
+        }
+
+        .mobile-menu {
+          position: fixed;
+          top: 0;
+          right: -100%;
+          width: 80%;
+          max-width: 320px;
+          height: 100vh;
+          background: #0a0e27;
+          z-index: 999;
+          transition: right 0.3s ease;
+          box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .mobile-menu.active {
+          right: 0;
+        }
+
+        /* Mobile Specific Styles */
         @media (max-width: 768px) {
-          .hide-mobile { display: none; }
-          .stats-grid-mobile { grid-template-columns: repeat(2, 1fr) !important; }
-          .hero-title-mobile { font-size: 2.5rem !important; }
+          .hide-mobile { display: none !important; }
+          .show-mobile { display: block !important; }
+          
+          .hero-title-mobile { 
+            font-size: 2.5rem !important; 
+            line-height: 1.2 !important;
+          }
+          
+          .hero-subtitle-mobile { 
+            font-size: 1.125rem !important; 
+            padding: 0 1rem !important;
+          }
+          
+          .stats-grid-mobile { 
+            grid-template-columns: repeat(2, 1fr) !important; 
+            gap: 1rem !important;
+          }
+          
+          .stat-value-mobile { 
+            font-size: 2rem !important; 
+          }
+          
+          .cta-mobile {
+            flex-direction: column !important;
+            width: 100% !important;
+            padding: 0 1rem !important;
+          }
+          
+          .cta-button-mobile {
+            width: 100% !important;
+            padding: 1rem !important;
+          }
+          
           .notification-banner { 
-            right: 10px; 
-            left: 10px;
-            padding: 0.75rem 1rem;
+            right: 10px !important; 
+            left: 10px !important;
+            padding: 0.75rem 1rem !important;
+            font-size: 0.875rem !important;
+          }
+          
+          .trades-grid-mobile {
+            grid-template-columns: 1fr !important;
+            padding: 0 !important;
+          }
+          
+          .trade-card-mobile {
+            margin: 0 1rem !important;
+          }
+          
+          .pricing-grid-mobile {
+            grid-template-columns: 1fr !important;
+            padding: 0 1rem !important;
+          }
+          
+          .faq-mobile {
+            padding: 0 1rem !important;
+          }
+          
+          .footer-links-mobile {
+            flex-wrap: wrap !important;
+            justify-content: center !important;
+            gap: 1rem !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .hero-title-mobile { 
+            font-size: 2rem !important; 
+          }
+          
+          .stat-value-mobile { 
+            font-size: 1.5rem !important; 
+          }
+          
+          .stat-label-mobile { 
+            font-size: 0.75rem !important; 
+          }
+        }
+
+        /* Touch-friendly tap targets */
+        @media (hover: none) and (pointer: coarse) {
+          button, a {
+            min-height: 44px;
+            min-width: 44px;
           }
         }
       `}</style>
 
+      {/* Mobile Menu Overlay */}
+      <div 
+        className={`mobile-menu-overlay ${mobileMenuOpen ? 'active' : ''}`}
+        onClick={() => setMobileMenuOpen(false)}
+      ></div>
+
+      {/* Mobile Menu */}
+      <div className={`mobile-menu ${mobileMenuOpen ? 'active' : ''}`}>
+        <div style={styles.mobileMenuHeader}>
+          <div style={styles.logo} className="gradient-text">MoonShot</div>
+          <button 
+            onClick={() => setMobileMenuOpen(false)}
+            style={styles.closeButton}
+          >
+            ✕
+          </button>
+        </div>
+        <nav style={styles.mobileNav}>
+          <button onClick={() => scrollToSection('proof')} style={styles.mobileNavLink}>
+            Live Results
+          </button>
+          <button onClick={() => scrollToSection('pricing')} style={styles.mobileNavLink}>
+            Pricing
+          </button>
+          <button onClick={() => scrollToSection('how-it-works')} style={styles.mobileNavLink}>
+            How It Works
+          </button>
+          <button onClick={() => scrollToSection('faq')} style={styles.mobileNavLink}>
+            FAQ
+          </button>
+          <button 
+            onClick={() => router.push('/login')} 
+            style={styles.mobileLoginButton}
+          >
+            Member Login
+          </button>
+          <button 
+            onClick={() => router.push('/signup')} 
+            style={styles.mobileSignupButton}
+          >
+            Get Started
+          </button>
+        </nav>
+      </div>
+
       {/* Connection Status Indicator */}
       <div style={{
-        position: 'fixed',
-        bottom: '20px',
-        left: '20px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        padding: '0.5rem 1rem',
-        background: 'rgba(30, 36, 68, 0.9)',
-        borderRadius: '20px',
-        backdropFilter: 'blur(10px)',
-        zIndex: 1000,
-        fontSize: '0.75rem',
+        ...styles.connectionStatus,
         color: isConnected ? '#64ffda' : '#ff5e5e'
       }}>
         <div style={{
-          width: '8px',
-          height: '8px',
-          borderRadius: '50%',
+          ...styles.connectionDot,
           background: isConnected ? '#64ffda' : '#ff5e5e',
           animation: isConnected ? 'pulse 2s infinite' : 'none'
         }}></div>
-        {isConnected ? 'Live Connected' : 'Connecting...'}
+        {isConnected ? 'Live' : 'Connecting...'}
       </div>
 
       {/* New Trade Notification */}
       {newTradeAlert && (
         <div className="notification-banner">
           <div style={{ fontSize: '0.875rem', color: '#64ffda', marginBottom: '0.25rem' }}>
-            🔥 NEW SIGNAL ALERT
+            🔥 NEW SIGNAL
           </div>
-          <div style={{ fontSize: '1.125rem', fontWeight: '600' }}>
+          <div style={{ fontSize: '1rem', fontWeight: '600' }}>
             {newTradeAlert.symbol} {newTradeAlert.direction === 'buy' ? 'LONG' : 'SHORT'}
           </div>
-          {newTradeAlert.title && (
-            <div style={{ fontSize: '0.875rem', color: '#8892b0', marginTop: '0.25rem' }}>
-              {newTradeAlert.title}
-            </div>
-          )}
         </div>
       )}
 
@@ -465,6 +621,8 @@ export default function LandingPage() {
       <nav style={styles.nav} className="glass-effect">
         <div style={styles.navContainer}>
           <div style={styles.logo} className="gradient-text">MoonShot Signals</div>
+          
+          {/* Desktop Navigation */}
           <div style={styles.navLinks} className="hide-mobile">
             <a href="#proof" style={styles.navLink}>Live Results</a>
             <a href="#pricing" style={styles.navLink}>Pricing</a>
@@ -478,19 +636,29 @@ export default function LandingPage() {
               Member Login
             </button>
           </div>
+
+          {/* Mobile Menu Button */}
+          <button 
+            style={styles.mobileMenuButton}
+            className="show-mobile"
+            onClick={() => setMobileMenuOpen(true)}
+          >
+            <div style={styles.hamburger}></div>
+            <div style={styles.hamburger}></div>
+            <div style={styles.hamburger}></div>
+          </button>
         </div>
       </nav>
 
       {/* Hero Section */}
       <section style={styles.hero}>
-        {/* Animated Background Elements */}
         <div style={styles.bgElements}>
           <div style={styles.bgCircle1} className="animate-float"></div>
           <div style={styles.bgCircle2} className="animate-float"></div>
         </div>
 
         <div style={styles.heroBadge} className="animate-pulse glass-effect animate-glow">
-          🔥 Limited to {25 - memberCount} Spots Remaining
+          🔥 Limited to {25 - memberCount} Spots
         </div>
         
         <h1 style={styles.heroTitle} className="animate-fade-in hero-title-mobile">
@@ -498,25 +666,29 @@ export default function LandingPage() {
           <span className="gradient-text">With {stats.winRate}% Win Rate</span>
         </h1>
         
-        <p style={styles.heroSubtitle} className="animate-fade-in">
+        <p style={styles.heroSubtitle} className="animate-fade-in hero-subtitle-mobile">
           Real-time crypto perpetual signals from a verified profitable trader. 
           No theory, just proven results.
         </p>
         
-        <div style={styles.heroCta} className="animate-fade-in">
+        <div style={styles.heroCta} className="animate-fade-in cta-mobile">
           <button 
             onClick={() => router.push('/signup')} 
             style={styles.ctaPrimary}
-            className="hover-glow"
+            className="hover-glow cta-button-mobile"
           >
             Get Instant Access
           </button>
-          <a href="#proof" style={styles.ctaSecondary} className="hover-glow glass-effect">
+          <a 
+            href="#proof" 
+            style={styles.ctaSecondary} 
+            className="hover-glow glass-effect cta-button-mobile"
+          >
             View Live Results
           </a>
         </div>
         
-        {/* Animated Stats Bar */}
+        {/* Stats Bar */}
         <div style={styles.statsBar} className="stats-grid-mobile">
           {[
             { value: stats.winRate + '%', label: 'Win Rate', delay: '0.1s' },
@@ -529,8 +701,12 @@ export default function LandingPage() {
               style={{...styles.statItem, animationDelay: stat.delay}} 
               className="glass-effect animate-fade-in hover-glow"
             >
-              <div style={styles.statValue} className="gradient-text">{stat.value}</div>
-              <div style={styles.statLabel}>{stat.label}</div>
+              <div style={styles.statValue} className="gradient-text stat-value-mobile">
+                {stat.value}
+              </div>
+              <div style={styles.statLabel} className="stat-label-mobile">
+                {stat.label}
+              </div>
             </div>
           ))}
         </div>
@@ -547,15 +723,15 @@ export default function LandingPage() {
             </div>
           </div>
           <p style={styles.sectionSubtitle}>
-            Every trade posted in real-time • Last update: just now
+            Every trade posted in real-time
           </p>
           
-          <div style={styles.tradesGrid}>
+          <div style={styles.tradesGrid} className="trades-grid-mobile">
             {displayTrades.map((trade, index) => (
               <div 
                 key={trade.id} 
                 style={styles.tradeCard} 
-                className={`hover-glow animate-fade-in ${index === 0 && recentTrades.length > 0 ? 'new-trade-flash' : ''}`}
+                className={`hover-glow animate-fade-in trade-card-mobile ${index === 0 && recentTrades.length > 0 ? 'new-trade-flash' : ''}`}
               >
                 {index === 0 && trade.status === 'open' && (
                   <div style={styles.newBadge} className="animate-pulse">NEW</div>
@@ -582,7 +758,7 @@ export default function LandingPage() {
                     <div style={styles.progressBar}>
                       <div style={styles.progressFill} className="animate-pulse"></div>
                     </div>
-                    <span style={{ fontSize: '0.75rem', color: '#64ffda' }}>POSITION ACTIVE</span>
+                    <span style={{ fontSize: '0.75rem', color: '#64ffda' }}>ACTIVE</span>
                   </div>
                 )}
               </div>
@@ -605,32 +781,34 @@ export default function LandingPage() {
       <section id="how-it-works" style={styles.howItWorks}>
         <div style={styles.sectionContainer}>
           <h2 style={styles.sectionTitle}>How It Works</h2>
-          <p style={styles.sectionSubtitle}>Start receiving profitable signals in minutes</p>
+          <p style={styles.sectionSubtitle}>
+            Start receiving profitable signals in minutes
+          </p>
           
           <div style={styles.stepsGrid}>
             {[
               { 
                 icon: '👤', 
                 title: 'Join VIP', 
-                desc: 'Choose your plan and get instant access to our private dashboard',
+                desc: 'Choose your plan and get instant access',
                 color: '#5e9eff'
               },
               { 
                 icon: '📊', 
                 title: 'Receive Signals', 
-                desc: 'Get real-time alerts with entry, stop loss, and take profit levels',
+                desc: 'Get real-time alerts with entry & exit levels',
                 color: '#64ffda'
               },
               { 
                 icon: '🚀', 
                 title: 'Copy & Trade', 
-                desc: 'Execute trades on OKX with one-click copy functionality',
+                desc: 'Execute trades on OKX with one click',
                 color: '#ffd464'
               },
               { 
                 icon: '📈', 
                 title: 'Track Results', 
-                desc: 'Monitor your performance with our real-time dashboard',
+                desc: 'Monitor performance in real-time',
                 color: '#ff5e5e'
               }
             ].map((step, index) => (
@@ -639,7 +817,7 @@ export default function LandingPage() {
                 style={{...styles.stepCard, animationDelay: `${index * 0.1}s`}} 
                 className="animate-fade-in hover-glow"
               >
-                <div style={{...styles.stepIcon, background: `rgba(30, 36, 68, 0.8)`, border: `3px solid ${step.color}`}}>
+                <div style={{...styles.stepIcon, border: `3px solid ${step.color}`}}>
                   {step.icon}
                 </div>
                 <h3 style={styles.stepTitle}>{step.title}</h3>
@@ -656,7 +834,7 @@ export default function LandingPage() {
           <h2 style={styles.sectionTitle}>Simple, Transparent Pricing</h2>
           <p style={styles.sectionSubtitle}>No hidden fees. Cancel anytime.</p>
           
-          <div style={styles.pricingGrid}>
+          <div style={styles.pricingGrid} className="pricing-grid-mobile">
             <div style={styles.pricingCard} className="hover-glow animate-fade-in">
               <h3 style={styles.planName}>Essential</h3>
               <div style={styles.planPrice}>
@@ -727,7 +905,7 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" style={styles.faqSection}>
+      <section id="faq" style={styles.faqSection} className="faq-mobile">
         <h2 style={styles.sectionTitle}>Frequently Asked Questions</h2>
         
         {[
@@ -776,7 +954,7 @@ export default function LandingPage() {
             Start Your 7-Day Trial
           </button>
           <p style={styles.ctaNote}>
-            Limited to 25 members total • Only {25 - memberCount} spots remaining
+            Limited to 25 members • Only {25 - memberCount} spots remaining
           </p>
         </div>
       </section>
@@ -784,14 +962,14 @@ export default function LandingPage() {
       {/* Footer */}
       <footer style={styles.footer}>
         <div style={styles.footerContent}>
-          <div style={styles.footerLinks}>
-            <a href="/terms" style={styles.footerLink}>Terms of Service</a>
-            <a href="/privacy" style={styles.footerLink}>Privacy Policy</a>
+          <div style={styles.footerLinks} className="footer-links-mobile">
+            <a href="/terms" style={styles.footerLink}>Terms</a>
+            <a href="/privacy" style={styles.footerLink}>Privacy</a>
             <a href="/disclaimer" style={styles.footerLink}>Risk Disclaimer</a>
             <a href="/contact" style={styles.footerLink}>Contact</a>
           </div>
           <p style={styles.copyright}>
-            © 2025 MoonShot Signals. Trading involves risk. Past performance doesn&apos;t guarantee future results.
+            © 2025 MoonShot Signals. Trading involves risk.
           </p>
         </div>
       </footer>
@@ -858,9 +1036,95 @@ const styles = {
     position: 'relative',
     overflow: 'hidden'
   },
+  mobileMenuButton: {
+    display: 'none',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '0.5rem',
+    flexDirection: 'column',
+    gap: '4px'
+  },
+  hamburger: {
+    width: '24px',
+    height: '2px',
+    backgroundColor: '#ffffff',
+    transition: 'all 0.3s'
+  },
+  mobileMenuHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '1.5rem',
+    borderBottom: '1px solid #2a3456'
+  },
+  closeButton: {
+    background: 'none',
+    border: 'none',
+    color: '#ffffff',
+    fontSize: '1.5rem',
+    cursor: 'pointer'
+  },
+  mobileNav: {
+    display: 'flex',
+    flexDirection: 'column',
+    padding: '1rem'
+  },
+  mobileNavLink: {
+    background: 'none',
+    border: 'none',
+    color: '#ffffff',
+    padding: '1rem',
+    textAlign: 'left',
+    fontSize: '1.125rem',
+    cursor: 'pointer',
+    borderBottom: '1px solid rgba(42, 52, 86, 0.3)',
+    transition: 'all 0.3s'
+  },
+  mobileLoginButton: {
+    margin: '1rem 0',
+    padding: '1rem',
+    backgroundColor: 'transparent',
+    border: '2px solid #5e9eff',
+    borderRadius: '8px',
+    color: '#5e9eff',
+    fontSize: '1rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.3s'
+  },
+  mobileSignupButton: {
+    padding: '1rem',
+    backgroundColor: '#64ffda',
+    border: 'none',
+    borderRadius: '8px',
+    color: '#0a0e27',
+    fontSize: '1rem',
+    fontWeight: '700',
+    cursor: 'pointer'
+  },
+  connectionStatus: {
+    position: 'fixed',
+    bottom: '20px',
+    left: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    padding: '0.5rem 1rem',
+    background: 'rgba(30, 36, 68, 0.9)',
+    borderRadius: '20px',
+    backdropFilter: 'blur(10px)',
+    zIndex: 1000,
+    fontSize: '0.75rem'
+  },
+  connectionDot: {
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%'
+  },
   hero: {
     marginTop: '80px',
-    padding: '8rem 2rem 6rem',
+    padding: '4rem 2rem 3rem',
     textAlign: 'center',
     position: 'relative',
     minHeight: '80vh',
@@ -906,7 +1170,7 @@ const styles = {
     letterSpacing: '0.5px'
   },
   heroTitle: {
-    fontSize: 'clamp(3rem, 8vw, 5rem)',
+    fontSize: 'clamp(2.5rem, 8vw, 5rem)',
     fontWeight: '800',
     marginBottom: '1.5rem',
     lineHeight: '1.1',
@@ -923,7 +1187,7 @@ const styles = {
     display: 'flex',
     gap: '1.5rem',
     justifyContent: 'center',
-    marginBottom: '5rem',
+    marginBottom: '3rem',
     flexWrap: 'wrap'
   },
   ctaPrimary: {
@@ -949,6 +1213,7 @@ const styles = {
     fontSize: '1.125rem',
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'center',
     transition: 'all 0.3s',
     position: 'relative',
     overflow: 'hidden'
@@ -961,27 +1226,27 @@ const styles = {
     width: '100%'
   },
   statItem: {
-    padding: '2rem',
+    padding: '1.5rem',
     borderRadius: '12px',
     textAlign: 'center',
     position: 'relative',
     overflow: 'hidden'
   },
   statValue: {
-    fontSize: '3.5rem',
+    fontSize: '3rem',
     fontWeight: '800',
     marginBottom: '0.5rem',
     letterSpacing: '-1px'
   },
   statLabel: {
     color: '#8892b0',
-    fontSize: '1rem',
+    fontSize: '0.875rem',
     textTransform: 'uppercase',
     letterSpacing: '1px',
     fontWeight: '500'
   },
   proofSection: {
-    padding: '6rem 2rem',
+    padding: '4rem 2rem',
     backgroundColor: '#151935',
     borderTop: '1px solid rgba(42, 52, 86, 0.5)',
     borderBottom: '1px solid rgba(42, 52, 86, 0.5)',
@@ -995,12 +1260,12 @@ const styles = {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: '2rem',
+    gap: '1.5rem',
     marginBottom: '1rem',
     flexWrap: 'wrap'
   },
   sectionTitle: {
-    fontSize: '3rem',
+    fontSize: 'clamp(2rem, 5vw, 3rem)',
     fontWeight: '700',
     textAlign: 'center',
     letterSpacing: '-1px'
@@ -1029,13 +1294,13 @@ const styles = {
   },
   sectionSubtitle: {
     color: '#8892b0',
-    fontSize: '1.25rem',
+    fontSize: 'clamp(1rem, 3vw, 1.25rem)',
     textAlign: 'center',
-    marginBottom: '4rem'
+    marginBottom: '3rem'
   },
   tradesGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
     gap: '2rem',
     marginBottom: '3rem'
   },
@@ -1043,7 +1308,7 @@ const styles = {
     backgroundColor: '#1e2444',
     border: '2px solid rgba(42, 52, 86, 0.5)',
     borderRadius: '12px',
-    padding: '2rem',
+    padding: '1.5rem',
     transition: 'all 0.3s',
     position: 'relative',
     overflow: 'hidden'
@@ -1065,13 +1330,15 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '1.5rem'
+    marginBottom: '1.5rem',
+    flexWrap: 'wrap',
+    gap: '0.5rem'
   },
   tradePair: {
     display: 'flex',
     alignItems: 'center',
     gap: '0.75rem',
-    fontSize: '1.125rem'
+    fontSize: '1rem'
   },
   buyBadge: {
     padding: '0.5rem 1rem',
@@ -1094,14 +1361,14 @@ const styles = {
     letterSpacing: '1px'
   },
   tradeProfit: {
-    fontSize: '1.75rem',
+    fontSize: '1.5rem',
     fontWeight: '700',
     color: '#64ffda',
     letterSpacing: '-0.5px'
   },
   tradeDetails: {
     color: '#8892b0',
-    fontSize: '0.95rem',
+    fontSize: '0.875rem',
     lineHeight: '1.8',
     marginBottom: '1rem'
   },
@@ -1140,20 +1407,20 @@ const styles = {
     overflow: 'hidden'
   },
   howItWorks: {
-    padding: '6rem 2rem',
+    padding: '4rem 2rem',
     backgroundColor: '#0a0e27',
     position: 'relative'
   },
   stepsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '3rem',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+    gap: '2rem',
     maxWidth: '1100px',
     margin: '0 auto'
   },
   stepCard: {
     textAlign: 'center',
-    padding: '2rem',
+    padding: '1.5rem',
     borderRadius: '12px',
     backgroundColor: 'rgba(30, 36, 68, 0.3)',
     border: '1px solid rgba(42, 52, 86, 0.3)',
@@ -1168,27 +1435,28 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: '50%',
-    fontSize: '2.5rem'
+    fontSize: '2.5rem',
+    background: 'rgba(30, 36, 68, 0.8)'
   },
   stepTitle: {
-    fontSize: '1.5rem',
+    fontSize: '1.25rem',
     marginBottom: '1rem',
     fontWeight: '600'
   },
   stepDesc: {
     color: '#8892b0',
-    fontSize: '1rem',
+    fontSize: '0.875rem',
     lineHeight: '1.6'
   },
   pricingSection: {
-    padding: '6rem 2rem',
+    padding: '4rem 2rem',
     backgroundColor: '#151935',
     position: 'relative'
   },
   pricingGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-    gap: '3rem',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+    gap: '2rem',
     maxWidth: '900px',
     margin: '0 auto'
   },
@@ -1196,7 +1464,7 @@ const styles = {
     backgroundColor: '#1e2444',
     border: '2px solid rgba(42, 52, 86, 0.5)',
     borderRadius: '16px',
-    padding: '3rem 2rem',
+    padding: '2.5rem 2rem',
     position: 'relative',
     textAlign: 'center',
     overflow: 'hidden'
@@ -1226,7 +1494,7 @@ const styles = {
     fontWeight: '600'
   },
   planPrice: {
-    fontSize: '4rem',
+    fontSize: '3.5rem',
     fontWeight: '800',
     color: '#64ffda',
     marginBottom: '2rem',
@@ -1249,12 +1517,13 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '0.75rem',
-    fontSize: '1rem'
+    fontSize: '0.95rem'
   },
   checkIcon: {
     color: '#64ffda',
     fontWeight: 'bold',
-    fontSize: '1.25rem'
+    fontSize: '1.25rem',
+    flexShrink: 0
   },
   planButton: {
     width: '100%',
@@ -1286,7 +1555,7 @@ const styles = {
     overflow: 'hidden'
   },
   faqSection: {
-    padding: '6rem 2rem',
+    padding: '4rem 2rem',
     maxWidth: '900px',
     margin: '0 auto'
   },
@@ -1295,29 +1564,30 @@ const styles = {
     border: '2px solid rgba(42, 52, 86, 0.5)',
     borderRadius: '12px',
     marginBottom: '1rem',
-    padding: '2rem',
+    padding: '1.5rem',
     cursor: 'pointer',
     transition: 'all 0.3s',
     position: 'relative',
     overflow: 'hidden'
   },
   faqQuestion: {
-    fontSize: '1.25rem',
+    fontSize: '1.125rem',
     fontWeight: '600',
     listStyle: 'none',
     cursor: 'pointer',
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
+    paddingRight: '2rem'
   },
   faqAnswer: {
     color: '#8892b0',
     lineHeight: '1.8',
     marginTop: '1rem',
-    fontSize: '1rem'
+    fontSize: '0.95rem'
   },
   ctaSection: {
-    padding: '8rem 2rem',
+    padding: '6rem 2rem',
     textAlign: 'center',
     background: 'linear-gradient(180deg, #151935 0%, #0a0e27 100%)',
     position: 'relative'
@@ -1327,13 +1597,13 @@ const styles = {
     margin: '0 auto'
   },
   ctaTitle: {
-    fontSize: '3.5rem',
+    fontSize: 'clamp(2rem, 6vw, 3.5rem)',
     marginBottom: '1.5rem',
     fontWeight: '800',
     letterSpacing: '-1px'
   },
   ctaSubtitle: {
-    fontSize: '1.5rem',
+    fontSize: 'clamp(1rem, 3vw, 1.5rem)',
     color: '#8892b0',
     marginBottom: '3rem'
   },
@@ -1378,10 +1648,12 @@ const styles = {
     color: '#8892b0',
     textDecoration: 'none',
     transition: 'color 0.3s',
-    fontWeight: '500'
+    fontWeight: '500',
+    padding: '0.5rem'
   },
   copyright: {
     color: '#5a6378',
-    fontSize: '0.875rem'
+    fontSize: '0.875rem',
+    padding: '0 1rem'
   }
 };
