@@ -742,88 +742,97 @@ export default function AdminDashboard() {
             <div style={styles.signalsGrid}>
               {signals.map(signal => (
                 <div key={signal.id} style={styles.signalCard}>
-                  {/* Signal Header */}
-                  <div style={styles.signalHeader}>
-                    <h3 style={styles.signalTitle}>{signal.title}</h3>
-                    <span style={styles.signalDate}>
-                      {new Date(signal.createdAt).toLocaleString('en-US', {
+                  {/* Signal Header with Title and Date */}
+                  <div style={styles.signalCardHeader}>
+                    <div style={styles.signalTitleSection}>
+                      <h3 style={styles.signalCardTitle}>{signal.title || 'Untitled Signal'}</h3>
+                      {signal.Trade && (
+                        <div style={styles.symbolDirection}>
+                          <span style={styles.signalSymbol}>{signal.Trade.symbol}</span>
+                          <span style={{
+                            ...styles.directionBadge,
+                            backgroundColor: signal.Trade.direction === 'BUY' ? 'rgba(100, 255, 218, 0.2)' : 'rgba(255, 94, 94, 0.2)',
+                            color: signal.Trade.direction === 'BUY' ? '#64ffda' : '#ff5e5e'
+                          }}>
+                            {signal.Trade.direction === 'BUY' ? 'LONG' : 'SHORT'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <span style={styles.signalTimestamp}>
+                      {new Date(signal.createdAt).toLocaleDateString('en-US', { 
                         month: 'short',
-                        day: 'numeric',
+                        day: 'numeric'
+                      })}, {new Date(signal.createdAt).toLocaleTimeString('en-US', {
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
                     </span>
                   </div>
-                  
-                  {/* Trade Info */}
-                  {signal.Trade && (
-                    <div style={styles.signalTradeInfo}>
-                      <span style={styles.signalSymbol}>{signal.Trade.symbol}</span>
-                      <span style={{
-                        ...styles.signalDirection,
-                        ...(signal.Trade.direction === 'BUY' ? styles.buyDirection : styles.sellDirection)
-                      }}>
-                        {signal.Trade.direction}
-                      </span>
-                      <span style={{
-                        ...styles.signalStatus,
-                        ...(signal.Trade.status === 'OPEN' ? styles.openStatus : styles.closedStatus)
-                      }}>
-                        {signal.Trade.status}
-                      </span>
+
+                  {/* Analysis Section */}
+                  {signal.analysis && (
+                    <div style={styles.analysisSection}>
+                      <h4 style={styles.sectionTitle}>Analysis</h4>
+                      <p style={styles.analysisText}>{signal.analysis}</p>
                     </div>
                   )}
-                  
-                  {/* Analysis - Full Text */}
-                  <div style={styles.signalAnalysisSection}>
-                    <h4 style={styles.sectionLabel}>Analysis</h4>
-                    <p style={styles.signalAnalysis}>{signal.analysis}</p>
-                  </div>
-                  
-                  {/* Risk Management */}
+
+                  {/* Risk Management Section */}
                   {signal.risk_management && (
-                    <div style={styles.signalRiskSection}>
-                      <h4 style={styles.sectionLabel}>Risk Management</h4>
-                      <p style={styles.signalRisk}>{signal.risk_management}</p>
+                    <div style={styles.riskSection}>
+                      <h4 style={styles.sectionTitle}>Risk Management</h4>
+                      <p style={styles.riskText}>{signal.risk_management}</p>
                     </div>
                   )}
-                  
-                  {/* Price Levels */}
-                  <div style={styles.signalPriceLevels}>
-                    {signal.Trade && (
-                      <>
-                        <div style={styles.priceLevel}>
-                          <span style={styles.priceLabelEntry}>Entry</span>
-                          <span style={styles.priceValue}>${signal.Trade.entry_price}</span>
+
+                  {/* Trade Details Grid */}
+                  {signal.Trade && (
+                    <div style={styles.tradeDetailsGrid}>
+                      <div style={styles.detailItem}>
+                        <span style={styles.detailLabel}>Entry</span>
+                        <span style={styles.detailValue}>${parseFloat(signal.Trade.entry_price).toFixed(2)}</span>
+                      </div>
+                      
+                      {signal.stop_loss && (
+                        <div style={styles.detailItem}>
+                          <span style={styles.detailLabelStop}>Stop Loss</span>
+                          <span style={styles.detailValue}>${parseFloat(signal.stop_loss).toFixed(2)}</span>
                         </div>
-                        {signal.stop_loss && (
-                          <div style={styles.priceLevel}>
-                            <span style={styles.priceLabelStop}>Stop Loss</span>
-                            <span style={styles.priceValue}>${signal.stop_loss}</span>
-                          </div>
-                        )}
-                        {signal.take_profit && (
-                          <div style={styles.priceLevel}>
-                            <span style={styles.priceLabelProfit}>Take Profit</span>
-                            <span style={styles.priceValue}>${signal.take_profit}</span>
-                          </div>
-                        )}
-                        {signal.Trade.exit_price && (
-                          <div style={styles.priceLevel}>
-                            <span style={styles.priceLabelExit}>Exit</span>
-                            <span style={styles.priceValue}>${signal.Trade.exit_price}</span>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                  
-                  {/* P&L Result */}
+                      )}
+                      
+                      {signal.take_profit && (
+                        <div style={styles.detailItem}>
+                          <span style={styles.detailLabelProfit}>Take Profit</span>
+                          <span style={styles.detailValue}>${parseFloat(signal.take_profit).toFixed(2)}</span>
+                        </div>
+                      )}
+                      
+                      {signal.Trade.exit_price && (
+                        <div style={styles.detailItem}>
+                          <span style={styles.detailLabel}>Exit</span>
+                          <span style={styles.detailValue}>${parseFloat(signal.Trade.exit_price).toFixed(2)}</span>
+                        </div>
+                      )}
+                      
+                      <div style={styles.detailItem}>
+                        <span style={styles.detailLabel}>Size</span>
+                        <span style={styles.detailValue}>{signal.Trade.size}</span>
+                      </div>
+                      
+                      <div style={styles.detailItem}>
+                        <span style={styles.detailLabel}>Leverage</span>
+                        <span style={styles.detailValue}>{signal.Trade.leverage}x</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* P&L Section if trade is closed */}
                   {signal.Trade && signal.Trade.pnl && (
-                    <div style={styles.signalResult}>
-                      <span style={styles.resultLabel}>Result</span>
+                    <div style={styles.pnlSection}>
+                      <span style={styles.pnlLabel}>P&L</span>
                       <span style={{
-                        ...styles.resultValue,
+                        ...styles.pnlValue,
                         color: parseFloat(signal.Trade.pnl) > 0 ? '#64ffda' : '#ff5e5e'
                       }}>
                         ${parseFloat(signal.Trade.pnl).toFixed(2)} 
@@ -831,19 +840,24 @@ export default function AdminDashboard() {
                       </span>
                     </div>
                   )}
-                  
-                  {/* Additional Trade Details */}
-                  {signal.Trade && (
-                    <div style={styles.signalFooter}>
-                      <span style={styles.footerItem}>Size: {signal.Trade.size}</span>
-                      <span style={styles.footerItem}>Leverage: {signal.Trade.leverage}x</span>
-                      {signal.Trade.closed_at && (
-                        <span style={styles.footerItem}>
-                          Duration: {calculateDuration(signal.Trade.opened_at, signal.Trade.closed_at)}
-                        </span>
-                      )}
-                    </div>
-                  )}
+
+                  {/* Status Badge */}
+                  <div style={styles.signalFooter}>
+                    <span style={{
+                      ...styles.statusBadge,
+                      backgroundColor: signal.Trade?.status === 'OPEN' ? 'rgba(94, 158, 255, 0.2)' : 'rgba(136, 146, 176, 0.2)',
+                      color: signal.Trade?.status === 'OPEN' ? '#5e9eff' : '#8892b0',
+                      borderColor: signal.Trade?.status === 'OPEN' ? '#5e9eff' : '#8892b0'
+                    }}>
+                      {signal.Trade?.status || 'CLOSED'}
+                    </span>
+                    
+                    {signal.Trade?.closed_at && (
+                      <span style={styles.duration}>
+                        Duration: {calculateDuration(signal.Trade.opened_at, signal.Trade.closed_at)}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -1037,6 +1051,7 @@ function calculateDuration(openTime, closeTime) {
   }
   return `${minutes}m`;
 }
+
 
 // Styles remain the same
 const styles = {
@@ -1494,7 +1509,7 @@ const styles = {
   
   signalsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(500px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
     gap: '1.5rem'
   },
   
@@ -1508,178 +1523,168 @@ const styles = {
     gap: '1rem'
   },
   
-  signalHeader: {
+  signalCardHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    borderBottom: '1px solid #2a3456',
-    paddingBottom: '1rem'
+    marginBottom: '0.5rem'
   },
   
-  signalTitle: {
-    fontSize: '1.125rem',
+  signalTitleSection: {
+    flex: 1
+  },
+  
+  signalCardTitle: {
+    fontSize: '1.25rem',
     fontWeight: '600',
     color: '#64ffda',
-    margin: 0,
-    flex: 1,
-    paddingRight: '1rem'
+    margin: '0 0 0.5rem 0'
   },
   
-  signalDate: {
-    fontSize: '0.875rem',
-    color: '#8892b0',
-    whiteSpace: 'nowrap'
-  },
-  
-  signalTradeInfo: {
+  symbolDirection: {
     display: 'flex',
-    gap: '0.75rem',
-    alignItems: 'center'
+    alignItems: 'center',
+    gap: '0.5rem'
   },
   
   signalSymbol: {
-    fontSize: '1rem',
-    fontWeight: '600',
-    color: '#ffffff'
+    fontSize: '0.875rem',
+    color: '#8892b0'
   },
   
-  signalDirection: {
+  directionBadge: {
     padding: '0.25rem 0.75rem',
     borderRadius: '6px',
     fontSize: '0.75rem',
     fontWeight: 'bold'
   },
   
-  buyDirection: {
-    backgroundColor: 'rgba(100, 255, 218, 0.2)',
-    color: '#64ffda'
+  signalTimestamp: {
+    fontSize: '0.875rem',
+    color: '#8892b0',
+    whiteSpace: 'nowrap'
   },
   
-  sellDirection: {
-    backgroundColor: 'rgba(255, 94, 94, 0.2)',
-    color: '#ff5e5e'
+  analysisSection: {
+    backgroundColor: 'rgba(30, 36, 68, 0.5)',
+    padding: '1rem',
+    borderRadius: '8px',
+    marginTop: '0.5rem'
   },
   
-  signalStatus: {
-    padding: '0.25rem 0.75rem',
-    borderRadius: '20px',
-    fontSize: '0.75rem',
-    marginLeft: 'auto'
-  },
-  
-  signalAnalysisSection: {
-    backgroundColor: '#1e2444',
+  riskSection: {
+    backgroundColor: 'rgba(30, 36, 68, 0.5)',
     padding: '1rem',
     borderRadius: '8px'
   },
   
-  sectionLabel: {
+  sectionTitle: {
     fontSize: '0.875rem',
     fontWeight: '600',
     color: '#5e9eff',
     marginBottom: '0.5rem',
-    margin: 0
+    margin: '0 0 0.5rem 0'
   },
   
-  signalAnalysis: {
+  analysisText: {
     fontSize: '0.875rem',
     color: '#ffffff',
     lineHeight: '1.6',
     margin: 0,
-    whiteSpace: 'pre-wrap'  // Preserves line breaks
+    whiteSpace: 'pre-wrap'
   },
   
-  signalRiskSection: {
-    backgroundColor: '#1e2444',
-    padding: '1rem',
-    borderRadius: '8px'
-  },
-  
-  signalRisk: {
+  riskText: {
     fontSize: '0.875rem',
     color: '#ffffff',
     lineHeight: '1.6',
-    margin: 0
+    margin: 0,
+    whiteSpace: 'pre-wrap'
   },
   
-  signalPriceLevels: {
+  tradeDetailsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-    gap: '0.75rem'
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '0.75rem',
+    marginTop: '0.5rem'
   },
   
-  priceLevel: {
-    backgroundColor: '#1e2444',
+  detailItem: {
+    backgroundColor: 'rgba(30, 36, 68, 0.5)',
     padding: '0.75rem',
     borderRadius: '6px',
     textAlign: 'center'
   },
   
-  priceLabelEntry: {
+  detailLabel: {
     display: 'block',
     fontSize: '0.75rem',
     color: '#8892b0',
     marginBottom: '0.25rem'
   },
   
-  priceLabelStop: {
+  detailLabelStop: {
     display: 'block',
     fontSize: '0.75rem',
     color: '#ff5e5e',
     marginBottom: '0.25rem'
   },
   
-  priceLabelProfit: {
+  detailLabelProfit: {
     display: 'block',
     fontSize: '0.75rem',
     color: '#64ffda',
     marginBottom: '0.25rem'
   },
   
-  priceLabelExit: {
-    display: 'block',
-    fontSize: '0.75rem',
-    color: '#5e9eff',
-    marginBottom: '0.25rem'
-  },
-  
-  priceValue: {
-    fontSize: '1rem',
+  detailValue: {
+    fontSize: '0.875rem',
     fontWeight: '600',
     color: '#ffffff'
   },
   
-  signalResult: {
-    backgroundColor: '#1e2444',
+  pnlSection: {
+    backgroundColor: 'rgba(30, 36, 68, 0.5)',
     padding: '1rem',
     borderRadius: '8px',
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
+    marginTop: '0.5rem'
   },
   
-  resultLabel: {
+  pnlLabel: {
     fontSize: '0.875rem',
-    color: '#8892b0'
+    color: '#8892b0',
+    fontWeight: '600'
   },
   
-  resultValue: {
-    fontSize: '1.125rem',
-    fontWeight: '600'
+  pnlValue: {
+    fontSize: '1rem',
+    fontWeight: '700'
   },
   
   signalFooter: {
     display: 'flex',
-    gap: '1.5rem',
-    fontSize: '0.875rem',
-    color: '#8892b0',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: '0.5rem',
     paddingTop: '1rem',
-    borderTop: '1px solid #2a3456'
+    borderTop: '1px solid rgba(42, 52, 86, 0.5)'
   },
   
-  footerItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.25rem'
+  statusBadge: {
+    padding: '0.25rem 0.75rem',
+    borderRadius: '20px',
+    fontSize: '0.75rem',
+    fontWeight: '600',
+    border: '1px solid',
+    textTransform: 'uppercase'
+  },
+  
+  duration: {
+    fontSize: '0.75rem',
+    color: '#8892b0'
   }
+
 };
