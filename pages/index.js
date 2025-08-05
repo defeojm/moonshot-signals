@@ -1,222 +1,375 @@
 import { useRouter } from 'next/router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 
 export default function LandingPage() {
   const router = useRouter();
   const [recentTrades, setRecentTrades] = useState([]);
   const [stats, setStats] = useState({
-    winRate: '90.8%',
+    winRate: '90.8',
     quarterProfit: '$153K',
     totalTrades: '5,561',
     sharpeRatio: '5.221'
   });
   const [memberCount, setMemberCount] = useState(23);
-  const [spotsRemaining, setSpotsRemaining] = useState(2);
-  const [socket, setSocket] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [newTradeAlert, setNewTradeAlert] = useState(null);
+  const socketRef = useRef(null);
 
   useEffect(() => {
-    // Initialize WebSocket connection
-    const newSocket = io(process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:5000');
-    setSocket(newSocket);
-
-    // Fetch initial data
-    fetchRecentTrades();
-    fetchStats();
-
-    // Listen for real-time updates
-    newSocket.on('new-trade', (trade) => {
-      setRecentTrades(prev => [trade, ...prev.slice(0, 5)]);
-      // Add animation for new trades
-      animateNewTrade();
+    // Initialize socket connection
+    const socket = io(process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:5000', {
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5
     });
 
-    newSocket.on('stats-update', (newStats) => {
-      setStats(newStats);
+    socketRef.current = socket;
+
+    // Connection event handlers
+    socket.on('connect', () => {
+      console.log('WebSocket connected');
+      setIsConnected(true);
+      // Request initial data on connect
+      socket.emit('request_stats');
+      socket.emit('request_recent_trades');
     });
 
-    newSocket.on('member-update', (data) => {
-      setMemberCount(data.total);
-      setSpotsRemaining(25 - data.total);
+    socket.on('disconnect', () => {
+      console.log('WebSocket disconnected');
+      setIsConnected(false);
     });
 
-    return () => newSocket.close();
+    // Real-time event handlers
+    socket.on('new_trade', (trade) => {
+      handleNewTrade(trade);
+    });
+
+    socket.on('trade_closed', (trade) => {
+      updateTradeStatus(trade);
+    });
+
+    socket.on('stats_update', (newStats) => {
+      updateStats(newStats);
+    });
+
+    socket.on('member_count_update', (count) => {
+      setMemberCount(count);
+    });
+
+    socket.on('initial_data', (data) => {
+      if (data.trades) setRecentTrades(data.trades.slice(0, 6));
+      if (data.stats) updateStats(data.stats);
+      if (data.memberCount) setMemberCount(data.memberCount);
+    });
+
+    // Fetch initial data via HTTP as fallback
+    fetchInitialData();
+
+    // Cleanup on unmount
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
-  const fetchRecentTrades = async () => {
+  const fetchInitialData = async () => {
     try {
-      const res = await fetch('/api/trades/recent');
-      const data = await res.json();
-      setRecentTrades(data);
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+
+      // Fetch recent trades
+      const tradesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/trades`, { headers });
+      if (tradesRes.ok) {
+        const trades = await tradesRes.json();
+        const recentPublishedTrades = trades
+          .filter(t => t.signal?.published)
+          .slice(0, 6);
+        setRecentTrades(recentPublishedTrades);
+      }
+
+      // Fetch stats
+      const statsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/analytics?period=90`, { headers });
+      if (statsRes.ok) {
+        const data = await statsRes.json();
+        updateStats(data.tradeStats);
+      }
+
+      // Fetch member count
+      const membersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/subscription-stats`, { headers });
+      if (membersRes.ok) {
+        const data = await membersRes.json();
+        setMemberCount(data.activeCount || 23);
+      }
     } catch (error) {
-      console.error('Error fetching trades:', error);
+      console.error('Error fetching initial data:', error);
     }
   };
 
-  const fetchStats = async () => {
-    try {
-      const res = await fetch('/api/performance/stats');
-      const data = await res.json();
-      setStats({
-        winRate: `${data.winRate}%`,
-        quarterProfit: `$${(data.quarterProfit / 1000).toFixed(0)}K`,
-        totalTrades: data.totalTrades.toLocaleString(),
-        sharpeRatio: data.sharpeRatio.toFixed(3)
-      });
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
-  };
-
-  const animateNewTrade = () => {
-    // Trigger CSS animation for new trade
-    const tradeCards = document.querySelectorAll('.trade-card');
-    if (tradeCards[0]) {
-      tradeCards[0].classList.add('pulse-animation');
-      setTimeout(() => {
-        tradeCards[0].classList.remove('pulse-animation');
-      }, 1000);
-    }
-  };
-
-  const formatTradeData = (trade) => {
-    const profit = trade.exit_price ? 
-      ((trade.exit_price - trade.entry_price) * trade.size).toFixed(0) : 
-      'Active';
-    const direction = trade.direction === 'buy' ? 'LONG' : 'SHORT';
-    const duration = trade.closed_at ? 
-      calculateDuration(trade.opened_at, trade.closed_at) : 
-      'Ongoing';
+  const handleNewTrade = (trade) => {
+    // Add new trade to the beginning with animation
+    setRecentTrades(prev => [trade, ...prev.slice(0, 5)]);
     
-    return { profit, direction, duration };
+    // Show notification
+    setNewTradeAlert({
+      symbol: trade.symbol,
+      direction: trade.direction,
+      profit: trade.pnl
+    });
+
+    // Clear notification after 5 seconds
+    setTimeout(() => setNewTradeAlert(null), 5000);
+  };
+
+  const updateTradeStatus = (updatedTrade) => {
+    setRecentTrades(prev => 
+      prev.map(trade => 
+        trade.id === updatedTrade.id ? updatedTrade : trade
+      )
+    );
+  };
+
+  const updateStats = (newStats) => {
+    setStats({
+      winRate: newStats.winRate ? `${newStats.winRate}` : '90.8',
+      quarterProfit: newStats.totalPnl ? `$${Math.round(newStats.totalPnl / 1000)}K` : '$153K',
+      totalTrades: newStats.totalTrades ? newStats.totalTrades.toLocaleString() : '5,561',
+      sharpeRatio: calculateSharpeRatio(newStats).toFixed(3)
+    });
+  };
+
+  const calculateSharpeRatio = (stats) => {
+    if (!stats.avgWin || !stats.avgLoss) return 5.221;
+    const avgReturn = (stats.avgWin + stats.avgLoss) / stats.totalTrades;
+    const riskFreeRate = 0.02;
+    return ((avgReturn - riskFreeRate) / Math.abs(stats.avgLoss)) * Math.sqrt(252);
+  };
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(price);
   };
 
   const calculateDuration = (start, end) => {
+    if (!start || !end) return 'Active';
     const diff = new Date(end) - new Date(start);
     const hours = Math.floor(diff / 3600000);
     const minutes = Math.floor((diff % 3600000) / 60000);
-    return `${hours}h ${minutes}m`;
+    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
   };
 
   return (
     <div style={styles.container}>
       <style jsx global>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideInRight {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
         }
 
         @keyframes pulse {
-          0% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-          100% { transform: scale(1); }
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.05); opacity: 0.8; }
         }
 
         @keyframes glow {
           0%, 100% { box-shadow: 0 0 20px rgba(100, 255, 218, 0.5); }
-          50% { box-shadow: 0 0 40px rgba(100, 255, 218, 0.8); }
+          50% { box-shadow: 0 0 40px rgba(100, 255, 218, 0.8), 0 0 60px rgba(100, 255, 218, 0.6); }
         }
 
-        @keyframes slideIn {
-          from { transform: translateX(-100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
+        @keyframes ripple {
+          0% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(1.5);
+            opacity: 0;
+          }
         }
 
-        .fade-in { animation: fadeInUp 0.8s ease-out; }
-        .pulse-animation { animation: pulse 0.6s ease-in-out; }
-        .glow-effect { animation: glow 2s ease-in-out infinite; }
-        .slide-in { animation: slideIn 0.5s ease-out; }
+        @keyframes gradientShift {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+        }
+
+        .animate-fade-in {
+          animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        .animate-slide-in {
+          animation: slideInRight 0.6s ease-out forwards;
+        }
+
+        .animate-pulse {
+          animation: pulse 2s ease-in-out infinite;
+        }
+
+        .animate-glow {
+          animation: glow 2s ease-in-out infinite;
+        }
+
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
 
         .gradient-text {
-          background: linear-gradient(135deg, #64ffda 0%, #5e9eff 100%);
+          background: linear-gradient(135deg, #64ffda 0%, #5e9eff 50%, #64ffda 100%);
+          background-size: 200% auto;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
-          background-clip: text;
+          animation: gradientShift 3s ease infinite;
         }
 
-        .hover-lift {
+        .hover-glow {
           transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
         }
-        .hover-lift:hover {
-          transform: translateY(-10px);
-          box-shadow: 0 20px 40px rgba(94, 158, 255, 0.3);
+
+        .hover-glow:hover {
+          transform: translateY(-2px);
+          filter: brightness(1.1);
+        }
+
+        .hover-glow::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 0;
+          height: 0;
+          border-radius: 50%;
+          background: rgba(100, 255, 218, 0.5);
+          transform: translate(-50%, -50%);
+          transition: width 0.6s, height 0.6s;
+        }
+
+        .hover-glow:hover::before {
+          width: 300px;
+          height: 300px;
+        }
+
+        .glass-effect {
+          background: rgba(30, 36, 68, 0.6);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(100, 255, 218, 0.2);
+        }
+
+        .new-trade-flash {
+          animation: flash 0.5s ease-out;
+        }
+
+        @keyframes flash {
+          0% { background-color: rgba(100, 255, 218, 0.3); }
+          100% { background-color: transparent; }
         }
 
         .live-dot {
           position: relative;
         }
+
         .live-dot::after {
           content: '';
           position: absolute;
           top: 50%;
           left: 50%;
-          transform: translate(-50%, -50%);
-          width: 20px;
-          height: 20px;
-          background: #64ffda;
+          width: 100%;
+          height: 100%;
           border-radius: 50%;
+          background: #64ffda;
+          transform: translate(-50%, -50%);
           animation: ripple 1.5s ease-out infinite;
         }
 
-        @keyframes ripple {
-          0% {
-            width: 8px;
-            height: 8px;
-            opacity: 1;
-          }
-          100% {
-            width: 30px;
-            height: 30px;
-            opacity: 0;
-          }
+        .notification-banner {
+          position: fixed;
+          top: 80px;
+          right: 20px;
+          background: linear-gradient(135deg, #1e2444 0%, #2a3456 100%);
+          border: 2px solid #64ffda;
+          border-radius: 12px;
+          padding: 1rem 2rem;
+          box-shadow: 0 10px 40px rgba(100, 255, 218, 0.3);
+          z-index: 1001;
+          animation: slideInRight 0.5s ease-out;
         }
 
-        .trade-card {
-          position: relative;
-          overflow: hidden;
-        }
-        .trade-card::before {
-          content: '';
-          position: absolute;
-          top: -2px;
-          left: -2px;
-          right: -2px;
-          bottom: -2px;
-          background: linear-gradient(45deg, #64ffda, #5e9eff, #64ffda);
-          border-radius: 8px;
-          opacity: 0;
-          z-index: -1;
-          transition: opacity 0.3s;
-        }
-        .trade-card:hover::before {
-          opacity: 1;
-        }
-
-        .new-trade-badge {
-          position: absolute;
-          top: -10px;
-          right: -10px;
-          background: #ffd464;
-          color: #0a0e27;
-          padding: 4px 12px;
-          border-radius: 20px;
-          font-size: 0.75rem;
-          font-weight: bold;
-          animation: pulse 1s ease-in-out infinite;
+        @media (max-width: 768px) {
+          .hide-mobile { display: none; }
+          .stats-grid-mobile { grid-template-columns: repeat(2, 1fr) !important; }
+          .hero-title-mobile { font-size: 2.5rem !important; }
         }
       `}</style>
 
-      {/* Navigation with Glass Effect */}
-      <nav style={styles.nav}>
+      {/* Connection Status Indicator */}
+      <div style={{
+        position: 'fixed',
+        bottom: '20px',
+        left: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        padding: '0.5rem 1rem',
+        background: 'rgba(30, 36, 68, 0.9)',
+        borderRadius: '20px',
+        backdropFilter: 'blur(10px)',
+        zIndex: 1000,
+        fontSize: '0.75rem',
+        color: isConnected ? '#64ffda' : '#ff5e5e'
+      }}>
+        <div style={{
+          width: '8px',
+          height: '8px',
+          borderRadius: '50%',
+          background: isConnected ? '#64ffda' : '#ff5e5e',
+          animation: isConnected ? 'pulse 2s infinite' : 'none'
+        }}></div>
+        {isConnected ? 'Live Connected' : 'Connecting...'}
+      </div>
+
+      {/* New Trade Notification */}
+      {newTradeAlert && (
+        <div className="notification-banner">
+          <div style={{ fontSize: '0.875rem', color: '#64ffda', marginBottom: '0.25rem' }}>
+            🔥 NEW TRADE ALERT
+          </div>
+          <div style={{ fontSize: '1.125rem', fontWeight: '600' }}>
+            {newTradeAlert.symbol} {newTradeAlert.direction === 'buy' ? 'LONG' : 'SHORT'}
+          </div>
+          {newTradeAlert.profit && (
+            <div style={{ fontSize: '1rem', color: '#64ffda' }}>
+              Profit: {formatPrice(newTradeAlert.profit)}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Navigation */}
+      <nav style={styles.nav} className="glass-effect">
         <div style={styles.navContainer}>
           <div style={styles.logo} className="gradient-text">MoonShot Signals</div>
-          <div style={styles.navLinks}>
+          <div style={styles.navLinks} className="hide-mobile">
             <a href="#proof" style={styles.navLink}>Live Results</a>
             <a href="#pricing" style={styles.navLink}>Pricing</a>
             <a href="#how-it-works" style={styles.navLink}>How It Works</a>
@@ -224,7 +377,7 @@ export default function LandingPage() {
             <button 
               onClick={() => router.push('/login')} 
               style={styles.loginButton}
-              className="hover-lift"
+              className="hover-glow"
             >
               Member Login
             </button>
@@ -232,63 +385,65 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero Section with Animations */}
+      {/* Hero Section */}
       <section style={styles.hero}>
-        <div style={styles.heroBadge} className="fade-in glow-effect">
+        {/* Animated Background Elements */}
+        <div style={styles.bgElements}>
+          <div style={styles.bgCircle1} className="animate-float"></div>
+          <div style={styles.bgCircle2} className="animate-float"></div>
+        </div>
+
+        <div style={styles.heroBadge} className="animate-pulse glass-effect animate-glow">
           🔥 Limited to {25 - memberCount} Spots Remaining
         </div>
-        <h1 style={styles.heroTitle} className="fade-in">
-          Trade Like a Pro<br />With {stats.winRate} Win Rate
+        
+        <h1 style={styles.heroTitle} className="animate-fade-in hero-title-mobile">
+          Trade Like a Pro<br />
+          <span className="gradient-text">With {stats.winRate}% Win Rate</span>
         </h1>
-        <p style={styles.heroSubtitle} className="fade-in">
+        
+        <p style={styles.heroSubtitle} className="animate-fade-in">
           Real-time crypto perpetual signals from a verified profitable trader. 
           No theory, just proven results.
         </p>
         
-        <div style={styles.heroCta} className="fade-in">
+        <div style={styles.heroCta} className="animate-fade-in">
           <button 
             onClick={() => router.push('/signup')} 
             style={styles.ctaPrimary}
-            className="hover-lift"
+            className="hover-glow"
           >
             Get Instant Access
           </button>
-          <a href="#proof" style={styles.ctaSecondary} className="hover-lift">
+          <a href="#proof" style={styles.ctaSecondary} className="hover-glow glass-effect">
             View Live Results
           </a>
         </div>
         
         {/* Animated Stats Bar */}
-        <div style={styles.statsBar} className="fade-in">
-          <div style={styles.statItem} className="hover-lift">
-            <div style={styles.statValue} className="gradient-text">{stats.winRate}</div>
-            <div style={styles.statLabel}>Win Rate</div>
-          </div>
-          <div style={styles.statItem} className="hover-lift">
-            <div style={styles.statValue} className="gradient-text">{stats.quarterProfit}</div>
-            <div style={styles.statLabel}>Q2 Profit</div>
-          </div>
-          <div style={styles.statItem} className="hover-lift">
-            <div style={styles.statValue} className="gradient-text">{stats.totalTrades}</div>
-            <div style={styles.statLabel}>Verified Trades</div>
-          </div>
-          <div style={styles.statItem} className="hover-lift">
-            <div style={styles.statValue} className="gradient-text">{stats.sharpeRatio}</div>
-            <div style={styles.statLabel}>Sharpe Ratio</div>
-          </div>
-        </div>
-
-        {/* Floating Background Elements */}
-        <div style={styles.floatingElements}>
-          <div style={styles.floatingCircle1}></div>
-          <div style={styles.floatingCircle2}></div>
+        <div style={styles.statsBar} className="stats-grid-mobile">
+          {[
+            { value: stats.winRate + '%', label: 'Win Rate', delay: '0.1s' },
+            { value: stats.quarterProfit, label: 'Q2 Profit', delay: '0.2s' },
+            { value: stats.totalTrades, label: 'Verified Trades', delay: '0.3s' },
+            { value: stats.sharpeRatio, label: 'Sharpe Ratio', delay: '0.4s' }
+          ].map((stat, index) => (
+            <div 
+              key={index} 
+              style={{...styles.statItem, animationDelay: stat.delay}} 
+              className="glass-effect animate-fade-in hover-glow"
+            >
+              <div style={styles.statValue} className="gradient-text">{stat.value}</div>
+              <div style={styles.statLabel}>{stat.label}</div>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Live Proof Section with Real-time Updates */}
+      {/* Live Proof Section */}
       <section id="proof" style={styles.proofSection}>
         <div style={styles.sectionContainer}>
-          <div style={styles.liveHeader}>
+          <div style={styles.sectionHeader}>
             <h2 style={styles.sectionTitle}>Live Trading Results</h2>
             <div style={styles.liveIndicator}>
               <span className="live-dot" style={styles.liveDot}></span>
@@ -300,102 +455,49 @@ export default function LandingPage() {
           </p>
           
           <div style={styles.tradesGrid}>
-            {recentTrades.length > 0 ? (
-              recentTrades.map((trade, index) => {
-                const { profit, direction, duration } = formatTradeData(trade);
-                return (
-                  <div 
-                    key={trade.id} 
-                    style={styles.tradeResult} 
-                    className={`trade-card hover-lift ${index === 0 ? 'slide-in' : ''}`}
-                  >
-                    {index === 0 && <div className="new-trade-badge">NEW</div>}
-                    <div style={styles.tradeResultHeader}>
-                      <div style={styles.tradePairBadge}>
-                        <span style={direction === 'LONG' ? styles.tradeLong : styles.tradeShort}>
-                          {direction}
-                        </span>
-                        <span>{trade.symbol}</span>
-                      </div>
-                      <span style={styles.tradeProfit}>
-                        {profit !== 'Active' ? `+$${profit}` : profit}
-                      </span>
-                    </div>
-                    <div style={styles.tradeDetails}>
-                      Entry: ${trade.entry_price.toLocaleString()}<br />
-                      {trade.exit_price && `Exit: $${trade.exit_price.toLocaleString()}`}<br />
-                      Duration: {duration}<br />
-                      Size: {trade.size} {trade.symbol.split('-')[0]}
-                    </div>
-                    <div style={styles.tradeStatus}>
-                      <div style={styles.progressBar}>
-                        <div 
-                          style={{
-                            ...styles.progressFill,
-                            width: trade.status === 'closed' ? '100%' : '60%'
-                          }}
-                        ></div>
-                      </div>
-                    </div>
+            {recentTrades.map((trade, index) => (
+              <div 
+                key={trade.id} 
+                style={styles.tradeCard} 
+                className={`hover-glow animate-fade-in ${index === 0 ? 'new-trade-flash' : ''}`}
+              >
+                {index === 0 && trade.status === 'open' && (
+                  <div style={styles.newBadge} className="animate-pulse">NEW</div>
+                )}
+                <div style={styles.tradeHeader}>
+                  <div style={styles.tradePair}>
+                    <span style={trade.direction === 'buy' ? styles.buyBadge : styles.sellBadge}>
+                      {trade.direction === 'buy' ? 'LONG' : 'SHORT'}
+                    </span>
+                    <span style={{ fontWeight: '600' }}>{trade.symbol}</span>
                   </div>
-                );
-              })
-            ) : (
-              // Placeholder trades for initial load
-              <>
-                <div style={styles.tradeResult} className="hover-lift">
-                  <div style={styles.tradeResultHeader}>
-                    <div style={styles.tradePairBadge}>
-                      <span style={styles.tradeLong}>LONG</span>
-                      <span>BTC-USDT</span>
-                    </div>
-                    <span style={styles.tradeProfit}>+$2,847</span>
-                  </div>
-                  <div style={styles.tradeDetails}>
-                    Entry: $65,450 → Exit: $66,320<br />
-                    Duration: 2h 15m<br />
-                    Risk/Reward: 1:2.8
-                  </div>
+                  <span style={styles.tradeProfit}>
+                    {trade.pnl ? formatPrice(trade.pnl) : 'Active'}
+                  </span>
                 </div>
-                
-                <div style={styles.tradeResult} className="hover-lift">
-                  <div style={styles.tradeResultHeader}>
-                    <div style={styles.tradePairBadge}>
-                      <span style={styles.tradeShort}>SHORT</span>
-                      <span>ETH-USDT</span>
-                    </div>
-                    <span style={styles.tradeProfit}>+$1,600</span>
-                  </div>
-                  <div style={styles.tradeDetails}>
-                    Entry: $3,420 → Exit: $3,380<br />
-                    Duration: 45m<br />
-                    Risk/Reward: 1:3.2
-                  </div>
+                <div style={styles.tradeDetails}>
+                  <div>Entry: {formatPrice(trade.entry_price)}</div>
+                  {trade.exit_price && <div>Exit: {formatPrice(trade.exit_price)}</div>}
+                  <div>Duration: {calculateDuration(trade.opened_at, trade.closed_at)}</div>
+                  <div>Size: {trade.size} {trade.symbol.split('-')[0]}</div>
                 </div>
-                
-                <div style={styles.tradeResult} className="hover-lift">
-                  <div style={styles.tradeResultHeader}>
-                    <div style={styles.tradePairBadge}>
-                      <span style={styles.tradeLong}>LONG</span>
-                      <span>SOL-USDT</span>
+                {trade.status === 'open' && (
+                  <div style={styles.activeIndicator}>
+                    <div style={styles.progressBar}>
+                      <div style={styles.progressFill} className="animate-pulse"></div>
                     </div>
-                    <span style={styles.tradeProfit}>+$920</span>
+                    <span style={{ fontSize: '0.75rem', color: '#64ffda' }}>POSITION ACTIVE</span>
                   </div>
-                  <div style={styles.tradeDetails}>
-                    Entry: $142.50 → Exit: $144.80<br />
-                    Duration: 1h 30m<br />
-                    Risk/Reward: 1:2.1
-                  </div>
-                </div>
-              </>
-            )}
+                )}
+              </div>
+            ))}
           </div>
 
-          <div style={styles.viewMoreContainer}>
+          <div style={styles.viewMore}>
             <button 
               onClick={() => router.push('/performance')} 
               style={styles.viewMoreButton}
-              className="hover-lift"
+              className="hover-glow"
             >
               View Full Track Record →
             </button>
@@ -403,126 +505,123 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* How It Works with Icons */}
+      {/* How It Works */}
       <section id="how-it-works" style={styles.howItWorks}>
         <div style={styles.sectionContainer}>
           <h2 style={styles.sectionTitle}>How It Works</h2>
-          <p style={styles.sectionSubtitle}>
-            Start receiving profitable signals in minutes
-          </p>
+          <p style={styles.sectionSubtitle}>Start receiving profitable signals in minutes</p>
           
           <div style={styles.stepsGrid}>
-            <div style={styles.stepCard} className="hover-lift fade-in">
-              <div style={styles.stepNumber}>
-                <span style={styles.stepIcon}>👤</span>
+            {[
+              { 
+                icon: '👤', 
+                title: 'Join VIP', 
+                desc: 'Choose your plan and get instant access to our private dashboard',
+                color: '#5e9eff'
+              },
+              { 
+                icon: '📊', 
+                title: 'Receive Signals', 
+                desc: 'Get real-time alerts with entry, stop loss, and take profit levels',
+                color: '#64ffda'
+              },
+              { 
+                icon: '🚀', 
+                title: 'Copy & Trade', 
+                desc: 'Execute trades on OKX with one-click copy functionality',
+                color: '#ffd464'
+              },
+              { 
+                icon: '📈', 
+                title: 'Track Results', 
+                desc: 'Monitor your performance with our real-time dashboard',
+                color: '#ff5e5e'
+              }
+            ].map((step, index) => (
+              <div 
+                key={index} 
+                style={{...styles.stepCard, animationDelay: `${index * 0.1}s`}} 
+                className="animate-fade-in hover-glow"
+              >
+                <div style={{...styles.stepIcon, background: `rgba(30, 36, 68, 0.8)`, border: `3px solid ${step.color}`}}>
+                  {step.icon}
+                </div>
+                <h3 style={styles.stepTitle}>{step.title}</h3>
+                <p style={styles.stepDesc}>{step.desc}</p>
               </div>
-              <h3 style={styles.stepTitle}>Join VIP</h3>
-              <p style={styles.stepDescription}>
-                Choose your plan and get instant access to our private dashboard
-              </p>
-            </div>
-            
-            <div style={styles.stepCard} className="hover-lift fade-in">
-              <div style={styles.stepNumber}>
-                <span style={styles.stepIcon}>📊</span>
-              </div>
-              <h3 style={styles.stepTitle}>Receive Signals</h3>
-              <p style={styles.stepDescription}>
-                Get real-time alerts with entry, stop loss, and take profit levels
-              </p>
-            </div>
-            
-            <div style={styles.stepCard} className="hover-lift fade-in">
-              <div style={styles.stepNumber}>
-                <span style={styles.stepIcon}>🚀</span>
-              </div>
-              <h3 style={styles.stepTitle}>Copy & Trade</h3>
-              <p style={styles.stepDescription}>
-                Execute trades on OKX with one-click copy functionality
-              </p>
-            </div>
-            
-            <div style={styles.stepCard} className="hover-lift fade-in">
-              <div style={styles.stepNumber}>
-                <span style={styles.stepIcon}>📈</span>
-              </div>
-              <h3 style={styles.stepTitle}>Track Results</h3>
-              <p style={styles.stepDescription}>
-                Monitor your performance with our real-time dashboard
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Enhanced Pricing Section */}
+      {/* Pricing Section */}
       <section id="pricing" style={styles.pricingSection}>
         <div style={styles.sectionContainer}>
           <h2 style={styles.sectionTitle}>Simple, Transparent Pricing</h2>
           <p style={styles.sectionSubtitle}>No hidden fees. Cancel anytime.</p>
           
           <div style={styles.pricingGrid}>
-            <div style={styles.pricingCard} className="hover-lift">
+            <div style={styles.pricingCard} className="hover-glow animate-fade-in">
               <h3 style={styles.planName}>Essential</h3>
               <div style={styles.planPrice}>
                 $99<span style={styles.priceUnit}>/month</span>
               </div>
-              <ul style={styles.pricingFeatures}>
+              <ul style={styles.features}>
                 <li style={styles.featureItem}>
-                  <span style={styles.checkmark}>✓</span> 5-10 daily signals
+                  <span style={styles.checkIcon}>✓</span> 5-10 daily signals
                 </li>
                 <li style={styles.featureItem}>
-                  <span style={styles.checkmark}>✓</span> Entry & exit alerts
+                  <span style={styles.checkIcon}>✓</span> Entry & exit alerts
                 </li>
                 <li style={styles.featureItem}>
-                  <span style={styles.checkmark}>✓</span> Basic risk management
+                  <span style={styles.checkIcon}>✓</span> Basic risk management
                 </li>
                 <li style={styles.featureItem}>
-                  <span style={styles.checkmark}>✓</span> Dashboard access
+                  <span style={styles.checkIcon}>✓</span> Dashboard access
                 </li>
                 <li style={styles.featureItem}>
-                  <span style={styles.checkmark}>✓</span> Email support
+                  <span style={styles.checkIcon}>✓</span> Email support
                 </li>
               </ul>
               <button 
                 onClick={() => router.push('/signup?plan=essential')} 
-                style={styles.pricingCta}
-                className="hover-lift"
+                style={styles.planButton}
+                className="hover-glow"
               >
                 Start Trading
               </button>
             </div>
             
-            <div style={{...styles.pricingCard, ...styles.featured}} className="hover-lift glow-effect">
-              <span style={styles.pricingBadge}>MOST POPULAR</span>
+            <div style={{...styles.pricingCard, ...styles.featured}} className="hover-glow animate-fade-in animate-glow">
+              <div style={styles.popularBadge}>MOST POPULAR</div>
               <h3 style={styles.planName}>VIP</h3>
               <div style={styles.planPrice}>
                 $199<span style={styles.priceUnit}>/month</span>
               </div>
-              <ul style={styles.pricingFeatures}>
+              <ul style={styles.features}>
                 <li style={styles.featureItem}>
-                  <span style={styles.checkmark}>✓</span> ALL trades in real-time
+                  <span style={styles.checkIcon}>✓</span> ALL trades in real-time
                 </li>
                 <li style={styles.featureItem}>
-                  <span style={styles.checkmark}>✓</span> Detailed analysis
+                  <span style={styles.checkIcon}>✓</span> Detailed analysis
                 </li>
                 <li style={styles.featureItem}>
-                  <span style={styles.checkmark}>✓</span> Position sizing guide
+                  <span style={styles.checkIcon}>✓</span> Position sizing guide
                 </li>
                 <li style={styles.featureItem}>
-                  <span style={styles.checkmark}>✓</span> Direct chat access
+                  <span style={styles.checkIcon}>✓</span> Direct chat access
                 </li>
                 <li style={styles.featureItem}>
-                  <span style={styles.checkmark}>✓</span> Weekly strategy calls
+                  <span style={styles.checkIcon}>✓</span> Weekly strategy calls
                 </li>
                 <li style={styles.featureItem}>
-                  <span style={styles.checkmark}>✓</span> Priority support
+                  <span style={styles.checkIcon}>✓</span> Priority support
                 </li>
               </ul>
               <button 
                 onClick={() => router.push('/signup?plan=vip')} 
-                style={styles.pricingCtaFeatured}
-                className="hover-lift"
+                style={styles.featuredButton}
+                className="hover-glow"
               >
                 Get VIP Access
               </button>
@@ -531,54 +630,40 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FAQ Section with Accordion */}
+      {/* FAQ Section */}
       <section id="faq" style={styles.faqSection}>
         <h2 style={styles.sectionTitle}>Frequently Asked Questions</h2>
         
-        <div style={styles.faqContainer}>
-          <details style={styles.faqItem} className="hover-lift">
-            <summary style={styles.faqQuestion}>
-              What exchanges do you trade on?
-            </summary>
-            <p style={styles.faqAnswer}>
-              I exclusively trade perpetual futures on OKX. All signals are optimized for OKX&apos;s platform, 
-              but can be executed on other exchanges offering BTC, ETH, and SOL perpetuals.
-            </p>
+        {[
+          {
+            q: 'What exchanges do you trade on?',
+            a: 'I exclusively trade perpetual futures on OKX. All signals are optimized for OKX\'s platform, but can be executed on other exchanges offering BTC, ETH, and SOL perpetuals.'
+          },
+          {
+            q: 'How many signals do you send daily?',
+            a: 'I average 10-20 trades per day during my trading window (6AM-12PM EST). Essential members receive 5-10 of the highest probability setups, while VIP members get every single trade I take.'
+          },
+          {
+            q: `Is your ${stats.winRate}% win rate real?`,
+            a: `Yes, verified across ${stats.totalTrades} trades in Q2 2025. However, my average loss is 3.6x my average win, meaning risk management is critical. I provide exact position sizing guidelines to all members.`
+          },
+          {
+            q: 'Can I cancel anytime?',
+            a: 'Absolutely. No contracts, no minimum commitment. Cancel directly from your dashboard or contact support. You\'ll maintain access until the end of your billing period.'
+          }
+        ].map((faq, index) => (
+          <details 
+            key={index} 
+            style={styles.faqItem} 
+            className="hover-glow animate-fade-in"
+          >
+            <summary style={styles.faqQuestion}>{faq.q}</summary>
+            <p style={styles.faqAnswer}>{faq.a}</p>
           </details>
-          
-          <details style={styles.faqItem} className="hover-lift">
-            <summary style={styles.faqQuestion}>
-              How many signals do you send daily?
-            </summary>
-            <p style={styles.faqAnswer}>
-              I average 10-20 trades per day during my trading window (6AM-12PM EST). Essential members 
-              receive 5-10 of the highest probability setups, while VIP members get every single trade I take.
-            </p>
-          </details>
-          
-          <details style={styles.faqItem} className="hover-lift">
-            <summary style={styles.faqQuestion}>
-              Is your {stats.winRate} win rate real?
-            </summary>
-            <p style={styles.faqAnswer}>
-              Yes, verified across {stats.totalTrades} trades in Q2 2025. However, my average loss is 3.6x my average win, 
-              meaning risk management is critical. I provide exact position sizing guidelines to all members.
-            </p>
-          </details>
-
-          <details style={styles.faqItem} className="hover-lift">
-            <summary style={styles.faqQuestion}>
-              Can I cancel anytime?
-            </summary>
-            <p style={styles.faqAnswer}>
-              Absolutely. No contracts, no minimum commitment. Cancel directly from your dashboard or contact support. 
-              You&apos;ll maintain access until the end of your billing period.
-            </p>
-          </details>
-        </div>
+        ))}
       </section>
 
-      {/* Final CTA with Urgency */}
+      {/* Final CTA */}
       <section style={styles.ctaSection}>
         <div style={styles.ctaContent}>
           <h2 style={styles.ctaTitle} className="gradient-text">
@@ -589,13 +674,13 @@ export default function LandingPage() {
           </p>
           <button 
             onClick={() => router.push('/signup')} 
-            style={styles.ctaPrimaryLarge}
-            className="hover-lift glow-effect"
+            style={styles.ctaButton}
+            className="hover-glow animate-glow"
           >
             Start Your 7-Day Trial
           </button>
           <p style={styles.ctaNote}>
-            Limited to 25 members total • Only {spotsRemaining} spots remaining
+            Limited to 25 members total • Only {25 - memberCount} spots remaining
           </p>
         </div>
       </section>
@@ -604,8 +689,8 @@ export default function LandingPage() {
       <footer style={styles.footer}>
         <div style={styles.footerContent}>
           <div style={styles.footerLinks}>
-            <a href="/terms" style={styles.footerLink}>Terms</a>
-            <a href="/privacy" style={styles.footerLink}>Privacy</a>
+            <a href="/terms" style={styles.footerLink}>Terms of Service</a>
+            <a href="/privacy" style={styles.footerLink}>Privacy Policy</a>
             <a href="/disclaimer" style={styles.footerLink}>Risk Disclaimer</a>
             <a href="/contact" style={styles.footerLink}>Contact</a>
           </div>
@@ -623,6 +708,7 @@ const styles = {
     minHeight: '100vh',
     backgroundColor: '#0a0e27',
     color: '#ffffff',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     position: 'relative',
     overflow: 'hidden'
   },
@@ -631,10 +717,10 @@ const styles = {
     top: 0,
     width: '100%',
     backgroundColor: 'rgba(10, 14, 39, 0.95)',
-    backdropFilter: 'blur(10px)',
-    borderBottom: '1px solid #2a3456',
+    backdropFilter: 'blur(20px)',
+    borderBottom: '1px solid rgba(42, 52, 86, 0.5)',
     zIndex: 1000,
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
+    transition: 'all 0.3s ease'
   },
   navContainer: {
     maxWidth: '1200px',
@@ -651,15 +737,17 @@ const styles = {
   },
   navLinks: {
     display: 'flex',
-    gap: '2rem',
+    gap: '2.5rem',
     alignItems: 'center'
   },
   navLink: {
     color: '#8892b0',
     textDecoration: 'none',
     transition: 'all 0.3s',
+    cursor: 'pointer',
     position: 'relative',
-    fontWeight: '500'
+    fontWeight: '500',
+    fontSize: '0.95rem'
   },
   loginButton: {
     padding: '0.75rem 2rem',
@@ -669,22 +757,53 @@ const styles = {
     color: '#5e9eff',
     cursor: 'pointer',
     transition: 'all 0.3s',
+    fontSize: '1rem',
     fontWeight: '600',
-    fontSize: '0.95rem'
+    position: 'relative',
+    overflow: 'hidden'
   },
   hero: {
     marginTop: '80px',
     padding: '8rem 2rem 6rem',
     textAlign: 'center',
-    position: 'relative'
+    position: 'relative',
+    minHeight: '80vh',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  bgElements: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+    zIndex: -1
+  },
+  bgCircle1: {
+    position: 'absolute',
+    width: '500px',
+    height: '500px',
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(100, 255, 218, 0.1) 0%, transparent 70%)',
+    top: '-250px',
+    right: '-250px'
+  },
+  bgCircle2: {
+    position: 'absolute',
+    width: '400px',
+    height: '400px',
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(94, 158, 255, 0.1) 0%, transparent 70%)',
+    bottom: '-200px',
+    left: '-200px'
   },
   heroBadge: {
     display: 'inline-block',
     padding: '0.75rem 1.5rem',
-    backgroundColor: 'rgba(100, 255, 218, 0.1)',
-    border: '2px solid #64ffda',
     borderRadius: '30px',
-    color: '#64ffda',
     fontSize: '0.875rem',
     marginBottom: '2rem',
     fontWeight: '600',
@@ -702,7 +821,6 @@ const styles = {
     color: '#8892b0',
     marginBottom: '3rem',
     maxWidth: '700px',
-    margin: '0 auto 3rem',
     lineHeight: '1.5'
   },
   heroCta: {
@@ -722,13 +840,12 @@ const styles = {
     fontSize: '1.125rem',
     cursor: 'pointer',
     transition: 'all 0.3s',
-    boxShadow: '0 10px 30px rgba(100, 255, 218, 0.3)'
+    boxShadow: '0 10px 30px rgba(100, 255, 218, 0.3)',
+    position: 'relative',
+    overflow: 'hidden'
   },
   ctaSecondary: {
     padding: '1.25rem 3rem',
-    backgroundColor: 'rgba(30, 36, 68, 0.6)',
-    backdropFilter: 'blur(10px)',
-    border: '2px solid #2a3456',
     color: '#ffffff',
     textDecoration: 'none',
     borderRadius: '10px',
@@ -736,22 +853,23 @@ const styles = {
     fontSize: '1.125rem',
     display: 'flex',
     alignItems: 'center',
-    transition: 'all 0.3s'
+    transition: 'all 0.3s',
+    position: 'relative',
+    overflow: 'hidden'
   },
   statsBar: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
     gap: '2rem',
     maxWidth: '1000px',
-    margin: '0 auto'
+    width: '100%'
   },
   statItem: {
-    textAlign: 'center',
     padding: '2rem',
-    backgroundColor: 'rgba(30, 36, 68, 0.3)',
     borderRadius: '12px',
-    border: '1px solid #2a3456',
-    backdropFilter: 'blur(10px)'
+    textAlign: 'center',
+    position: 'relative',
+    overflow: 'hidden'
   },
   statValue: {
     fontSize: '3.5rem',
@@ -762,56 +880,28 @@ const styles = {
   statLabel: {
     color: '#8892b0',
     fontSize: '1rem',
-    fontWeight: '500',
     textTransform: 'uppercase',
-    letterSpacing: '1px'
-  },
-  floatingElements: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    overflow: 'hidden',
-    zIndex: -1
-  },
-  floatingCircle1: {
-    position: 'absolute',
-    width: '400px',
-    height: '400px',
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(100, 255, 218, 0.1) 0%, transparent 70%)',
-    top: '-200px',
-    right: '-200px',
-    animation: 'float 20s ease-in-out infinite'
-  },
-  floatingCircle2: {
-    position: 'absolute',
-    width: '300px',
-    height: '300px',
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(94, 158, 255, 0.1) 0%, transparent 70%)',
-    bottom: '-150px',
-    left: '-150px',
-    animation: 'float 15s ease-in-out infinite reverse'
+    letterSpacing: '1px',
+    fontWeight: '500'
   },
   proofSection: {
     padding: '6rem 2rem',
     backgroundColor: '#151935',
-    borderTop: '1px solid #2a3456',
-    borderBottom: '1px solid #2a3456',
+    borderTop: '1px solid rgba(42, 52, 86, 0.5)',
+    borderBottom: '1px solid rgba(42, 52, 86, 0.5)',
     position: 'relative'
   },
   sectionContainer: {
     maxWidth: '1200px',
     margin: '0 auto'
   },
-  liveHeader: {
+  sectionHeader: {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     gap: '2rem',
-    marginBottom: '1rem'
+    marginBottom: '1rem',
+    flexWrap: 'wrap'
   },
   sectionTitle: {
     fontSize: '3rem',
@@ -827,14 +917,19 @@ const styles = {
     fontSize: '0.875rem',
     fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: '1px'
+    letterSpacing: '1px',
+    padding: '0.5rem 1rem',
+    background: 'rgba(100, 255, 218, 0.1)',
+    borderRadius: '20px',
+    border: '1px solid rgba(100, 255, 218, 0.3)'
   },
   liveDot: {
     width: '8px',
     height: '8px',
     backgroundColor: '#64ffda',
     borderRadius: '50%',
-    display: 'inline-block'
+    display: 'inline-block',
+    position: 'relative'
   },
   sectionSubtitle: {
     color: '#8892b0',
@@ -848,42 +943,57 @@ const styles = {
     gap: '2rem',
     marginBottom: '3rem'
   },
-  tradeResult: {
+  tradeCard: {
     backgroundColor: '#1e2444',
-    border: '2px solid #2a3456',
+    border: '2px solid rgba(42, 52, 86, 0.5)',
     borderRadius: '12px',
     padding: '2rem',
+    transition: 'all 0.3s',
     position: 'relative',
-    transition: 'all 0.3s'
+    overflow: 'hidden'
   },
-  tradeResultHeader: {
+  newBadge: {
+    position: 'absolute',
+    top: '-5px',
+    right: '-5px',
+    backgroundColor: '#ffd464',
+    color: '#0a0e27',
+    padding: '0.5rem 1rem',
+    borderRadius: '20px',
+    fontSize: '0.75rem',
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: '1px'
+  },
+  tradeHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: '1.5rem'
   },
-  tradePairBadge: {
+  tradePair: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.75rem'
+    gap: '0.75rem',
+    fontSize: '1.125rem'
   },
-  tradeLong: {
+  buyBadge: {
     padding: '0.5rem 1rem',
+    backgroundColor: 'rgba(100, 255, 218, 0.2)',
+    color: '#64ffda',
     borderRadius: '25px',
     fontSize: '0.75rem',
     fontWeight: 'bold',
-    backgroundColor: 'rgba(100, 255, 218, 0.2)',
-    color: '#64ffda',
     textTransform: 'uppercase',
     letterSpacing: '1px'
   },
-  tradeShort: {
+  sellBadge: {
     padding: '0.5rem 1rem',
+    backgroundColor: 'rgba(255, 94, 94, 0.2)',
+    color: '#ff5e5e',
     borderRadius: '25px',
     fontSize: '0.75rem',
     fontWeight: 'bold',
-    backgroundColor: 'rgba(255, 94, 94, 0.2)',
-    color: '#ff5e5e',
     textTransform: 'uppercase',
     letterSpacing: '1px'
   },
@@ -899,24 +1009,26 @@ const styles = {
     lineHeight: '1.8',
     marginBottom: '1rem'
   },
-  tradeStatus: {
-    marginTop: '1.5rem'
+  activeIndicator: {
+    marginTop: '1rem',
+    paddingTop: '1rem',
+    borderTop: '1px solid rgba(42, 52, 86, 0.5)'
   },
   progressBar: {
     height: '4px',
     backgroundColor: 'rgba(136, 146, 176, 0.2)',
     borderRadius: '2px',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    marginBottom: '0.5rem'
   },
   progressFill: {
     height: '100%',
+    width: '60%',
     backgroundColor: '#64ffda',
-    transition: 'width 0.5s ease',
     borderRadius: '2px'
   },
-  viewMoreContainer: {
-    textAlign: 'center',
-    marginTop: '3rem'
+  viewMore: {
+    textAlign: 'center'
   },
   viewMoreButton: {
     padding: '1rem 2.5rem',
@@ -927,11 +1039,14 @@ const styles = {
     fontSize: '1rem',
     fontWeight: '600',
     cursor: 'pointer',
-    transition: 'all 0.3s'
+    transition: 'all 0.3s',
+    position: 'relative',
+    overflow: 'hidden'
   },
   howItWorks: {
     padding: '6rem 2rem',
-    backgroundColor: '#0a0e27'
+    backgroundColor: '#0a0e27',
+    position: 'relative'
   },
   stepsGrid: {
     display: 'grid',
@@ -942,36 +1057,37 @@ const styles = {
   },
   stepCard: {
     textAlign: 'center',
-    padding: '2rem'
-  },
-  stepNumber: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '80px',
-    height: '80px',
-    backgroundColor: 'rgba(30, 36, 68, 0.6)',
-    border: '3px solid #5e9eff',
-    borderRadius: '50%',
-    marginBottom: '1.5rem',
-    position: 'relative'
+    padding: '2rem',
+    borderRadius: '12px',
+    backgroundColor: 'rgba(30, 36, 68, 0.3)',
+    border: '1px solid rgba(42, 52, 86, 0.3)',
+    position: 'relative',
+    overflow: 'hidden'
   },
   stepIcon: {
-    fontSize: '2rem'
+    width: '80px',
+    height: '80px',
+    margin: '0 auto 1.5rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: '50%',
+    fontSize: '2.5rem'
   },
   stepTitle: {
     fontSize: '1.5rem',
     marginBottom: '1rem',
     fontWeight: '600'
   },
-  stepDescription: {
+  stepDesc: {
     color: '#8892b0',
     fontSize: '1rem',
     lineHeight: '1.6'
   },
   pricingSection: {
     padding: '6rem 2rem',
-    backgroundColor: '#151935'
+    backgroundColor: '#151935',
+    position: 'relative'
   },
   pricingGrid: {
     display: 'grid',
@@ -982,18 +1098,19 @@ const styles = {
   },
   pricingCard: {
     backgroundColor: '#1e2444',
-    border: '2px solid #2a3456',
+    border: '2px solid rgba(42, 52, 86, 0.5)',
     borderRadius: '16px',
     padding: '3rem 2rem',
     position: 'relative',
-    textAlign: 'center'
+    textAlign: 'center',
+    overflow: 'hidden'
   },
   featured: {
     borderColor: '#64ffda',
     transform: 'scale(1.05)',
     backgroundColor: 'rgba(30, 36, 68, 0.8)'
   },
-  pricingBadge: {
+  popularBadge: {
     position: 'absolute',
     top: '-14px',
     left: '50%',
@@ -1024,10 +1141,10 @@ const styles = {
     color: '#8892b0',
     fontWeight: '400'
   },
-  pricingFeatures: {
+  features: {
     listStyle: 'none',
     padding: 0,
-    margin: '2rem 0',
+    margin: '0 0 2rem 0',
     textAlign: 'left'
   },
   featureItem: {
@@ -1038,63 +1155,61 @@ const styles = {
     gap: '0.75rem',
     fontSize: '1rem'
   },
-  checkmark: {
+  checkIcon: {
     color: '#64ffda',
     fontWeight: 'bold',
     fontSize: '1.25rem'
   },
-  pricingCta: {
-    display: 'block',
+  planButton: {
     width: '100%',
     padding: '1.25rem',
     backgroundColor: '#5e9eff',
+    color: '#ffffff',
     border: 'none',
     borderRadius: '10px',
-    color: '#ffffff',
-    fontSize: '1.125rem',
     fontWeight: '600',
     cursor: 'pointer',
+    fontSize: '1.125rem',
     transition: 'all 0.3s',
-    marginTop: '2rem'
+    position: 'relative',
+    overflow: 'hidden'
   },
-  pricingCtaFeatured: {
-    display: 'block',
+  featuredButton: {
     width: '100%',
     padding: '1.25rem',
     backgroundColor: '#64ffda',
+    color: '#0a0e27',
     border: 'none',
     borderRadius: '10px',
-    color: '#0a0e27',
-    fontSize: '1.125rem',
     fontWeight: '700',
     cursor: 'pointer',
-    marginTop: '2rem',
-    boxShadow: '0 10px 30px rgba(100, 255, 218, 0.3)'
+    fontSize: '1.125rem',
+    boxShadow: '0 10px 30px rgba(100, 255, 218, 0.3)',
+    transition: 'all 0.3s',
+    position: 'relative',
+    overflow: 'hidden'
   },
   faqSection: {
     padding: '6rem 2rem',
     maxWidth: '900px',
     margin: '0 auto'
   },
-  faqContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1rem'
-  },
   faqItem: {
     backgroundColor: '#151935',
-    border: '2px solid #2a3456',
+    border: '2px solid rgba(42, 52, 86, 0.5)',
     borderRadius: '12px',
-    padding: '1.5rem',
     marginBottom: '1rem',
-    cursor: 'pointer'
+    padding: '2rem',
+    cursor: 'pointer',
+    transition: 'all 0.3s',
+    position: 'relative',
+    overflow: 'hidden'
   },
   faqQuestion: {
-    marginBottom: '0.75rem',
     fontSize: '1.25rem',
     fontWeight: '600',
-    cursor: 'pointer',
     listStyle: 'none',
+    cursor: 'pointer',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center'
@@ -1102,8 +1217,8 @@ const styles = {
   faqAnswer: {
     color: '#8892b0',
     lineHeight: '1.8',
-    fontSize: '1rem',
-    marginTop: '1rem'
+    marginTop: '1rem',
+    fontSize: '1rem'
   },
   ctaSection: {
     padding: '8rem 2rem',
@@ -1126,7 +1241,7 @@ const styles = {
     color: '#8892b0',
     marginBottom: '3rem'
   },
-  ctaPrimaryLarge: {
+  ctaButton: {
     padding: '1.5rem 4rem',
     backgroundColor: '#64ffda',
     color: '#0a0e27',
@@ -1136,7 +1251,9 @@ const styles = {
     fontSize: '1.25rem',
     cursor: 'pointer',
     transition: 'all 0.3s',
-    boxShadow: '0 20px 40px rgba(100, 255, 218, 0.4)'
+    boxShadow: '0 20px 40px rgba(100, 255, 218, 0.4)',
+    position: 'relative',
+    overflow: 'hidden'
   },
   ctaNote: {
     fontSize: '1rem',
@@ -1147,9 +1264,8 @@ const styles = {
   footer: {
     padding: '3rem 2rem',
     backgroundColor: '#0a0e27',
-    borderTop: '1px solid #2a3456',
-    textAlign: 'center',
-    color: '#8892b0'
+    borderTop: '1px solid rgba(42, 52, 86, 0.5)',
+    textAlign: 'center'
   },
   footerContent: {
     maxWidth: '1200px',
@@ -1159,7 +1275,8 @@ const styles = {
     display: 'flex',
     gap: '2rem',
     justifyContent: 'center',
-    marginBottom: '2rem'
+    marginBottom: '2rem',
+    flexWrap: 'wrap'
   },
   footerLink: {
     color: '#8892b0',
@@ -1168,7 +1285,7 @@ const styles = {
     fontWeight: '500'
   },
   copyright: {
-    fontSize: '0.875rem',
-    color: '#5a6378'
+    color: '#5a6378',
+    fontSize: '0.875rem'
   }
 };
