@@ -4,12 +4,6 @@ import { useWebSocket } from '../hooks/useWebSocket';
 import UserSettings from '../components/UserSettings';
 import ChatWidget from '../components/ChatWidget';
 import config from '../utils/config';
-
-
-// Helper to handle both signal.trade and getSignalTrade(signal)
-const getSignalTrade = (signal) => {
-  return signal.trade || getSignalTrade(signal) || null;
-};
 export const getServerSideProps = async () => {
   return {
     props: {},
@@ -119,12 +113,12 @@ export default function CustomerDashboard() {
         let activeCount = 0;
         
         signalsArray.forEach(signal => {
-          if (!getSignalTrade(signal)) return;
+          if (!signal.Trade) return;
           
           const signalDate = new Date(signal.createdAt).setHours(0,0,0,0);
-          const pnl = parseFloat(getSignalTrade(signal)?.pnl || 0);
+          const pnl = parseFloat(signal.Trade.pnl || 0);
           
-          if (getSignalTrade(signal)?.status === 'OPEN') activeCount++;
+          if (signal.Trade.status === 'OPEN') activeCount++;
           if (signalDate === today) todayPnl += pnl;
           if (new Date(signal.createdAt) >= weekAgo) weekPnl += pnl;
         });
@@ -196,11 +190,11 @@ export default function CustomerDashboard() {
   };
 
   const copyToClipboard = (signal) => {
-    if (!getSignalTrade(signal)) return;
+    if (!signal.Trade) return;
     
     const text = `
-${getSignalTrade(signal)?.symbol} ${getSignalTrade(signal)?.direction}
-Entry: $${getSignalTrade(signal)?.entry_price}
+${signal.Trade.symbol} ${signal.Trade.direction}
+Entry: $${signal.Trade.entry_price}
 SL: $${signal.stop_loss || 'N/A'}
 TP: $${signal.take_profit || 'N/A'}
     `.trim();
@@ -309,7 +303,7 @@ TP: $${signal.take_profit || 'N/A'}
           ) : (
             signals.map(signal => {
               // Skip if no trade data
-              if (!getSignalTrade(signal)) return null;
+              if (!signal.Trade) return null;
               
               return (
                 <div key={signal.id} style={styles.signalCard}>
@@ -317,11 +311,11 @@ TP: $${signal.take_profit || 'N/A'}
                     <div style={styles.signalInfo}>
                       <span style={{
                         ...styles.direction,
-                        ...(getSignalTrade(signal)?.direction === 'BUY' || getSignalTrade(signal)?.direction === 'LONG' ? styles.long : styles.short)
+                        ...(signal.Trade.direction === 'BUY' || signal.Trade.direction === 'LONG' ? styles.long : styles.short)
                       }}>
-                        {getSignalTrade(signal)?.direction}
+                        {signal.Trade.direction}
                       </span>
-                      <span style={styles.pair}>{getSignalTrade(signal)?.symbol}</span>
+                      <span style={styles.pair}>{signal.Trade.symbol}</span>
                     </div>
                     <span style={styles.time}>
                       {new Date(signal.createdAt).toLocaleString()}
@@ -333,7 +327,7 @@ TP: $${signal.take_profit || 'N/A'}
                   <div style={styles.priceGrid}>
                     <div style={styles.priceItem}>
                       <span style={styles.priceLabel}>Entry Price</span>
-                      <span style={styles.priceValue}>${getSignalTrade(signal)?.entry_price}</span>
+                      <span style={styles.priceValue}>${signal.Trade.entry_price}</span>
                     </div>
                     <div style={styles.priceItem}>
                       <span style={styles.priceLabel}>Stop Loss</span>
@@ -345,7 +339,7 @@ TP: $${signal.take_profit || 'N/A'}
                     </div>
                     <div style={styles.priceItem}>
                       <span style={styles.priceLabel}>Status</span>
-                      <span style={styles.priceValue}>{getSignalTrade(signal)?.status}</span>
+                      <span style={styles.priceValue}>{signal.Trade.status}</span>
                     </div>
                   </div>
 
@@ -362,12 +356,12 @@ TP: $${signal.take_profit || 'N/A'}
                   <div style={styles.signalFooter}>
                     <span style={{
                       ...styles.statusBadge,
-                      ...(getSignalTrade(signal)?.status === 'OPEN' ? styles.active : 
-                          getSignalTrade(signal)?.pnl > 0 ? styles.profit : styles.loss)
+                      ...(signal.Trade.status === 'OPEN' ? styles.active : 
+                          signal.Trade.pnl > 0 ? styles.profit : styles.loss)
                     }}>
-                      {getSignalTrade(signal)?.status === 'OPEN' ? 'ACTIVE' : 
-                       getSignalTrade(signal)?.pnl > 0 ? `PROFIT +$${getSignalTrade(signal)?.pnl}` : 
-                       `LOSS -$${Math.abs(getSignalTrade(signal)?.pnl)}`}
+                      {signal.Trade.status === 'OPEN' ? 'ACTIVE' : 
+                       signal.Trade.pnl > 0 ? `PROFIT +$${signal.Trade.pnl}` : 
+                       `LOSS -$${Math.abs(signal.Trade.pnl)}`}
                     </span>
                     <button 
                       onClick={() => copyToClipboard(signal)} 
