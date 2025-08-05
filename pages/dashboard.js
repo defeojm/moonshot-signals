@@ -5,16 +5,17 @@ import UserSettings from '../components/UserSettings';
 import ChatWidget from '../components/ChatWidget';
 import config from '../utils/config';
 
-
 // Helper to handle both signal.trade and getSignalTrade(signal)
 const getSignalTrade = (signal) => {
   return signal.trade || getSignalTrade(signal) || null;
 };
+
 export const getServerSideProps = async () => {
   return {
     props: {},
   };
 };
+
 export default function CustomerDashboard() {
   const [user, setUser] = useState(null);
   const [signals, setSignals] = useState([]);
@@ -226,6 +227,11 @@ TP: $${signal.take_profit || 'N/A'}
           50% { opacity: 0.5; }
           100% { opacity: 1; }
         }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
       `}</style>
       
       {/* Header */}
@@ -234,7 +240,7 @@ TP: $${signal.take_profit || 'N/A'}
         <nav style={styles.nav}>
           <a 
             href="#" 
-            style={styles.navLink}
+            style={{...styles.navLink, ...styles.activeNavLink}}
             onClick={(e) => {
               e.preventDefault();
               // Scroll to signals or do nothing since we're already on Live Signals
@@ -264,7 +270,7 @@ TP: $${signal.take_profit || 'N/A'}
           </a>
         </nav>
         <div style={styles.headerRight}>
-          <span>{user.email}</span>
+          <span style={styles.userEmail}>{user.email}</span>
           <button onClick={handleManageSubscription} style={styles.manageBtn}>
             Manage Subscription
           </button>
@@ -448,12 +454,13 @@ TP: $${signal.take_profit || 'N/A'}
   );
 }
 
-// Styles remain the same
+// Updated styles to match landing page CSS
 const styles = {
   container: {
     minHeight: '100vh',
     backgroundColor: '#0a0e27',
-    color: '#ffffff'
+    color: '#ffffff',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
   
   header: {
@@ -462,156 +469,240 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottom: '1px solid #2a3456'
+    borderBottom: '1px solid #2a3456',
+    position: 'sticky',
+    top: 0,
+    zIndex: 1000,
+    backdropFilter: 'blur(10px)',
+    background: 'rgba(21, 25, 53, 0.95)',
   },
+  
   logo: {
     fontSize: '1.5rem',
     fontWeight: 'bold',
-    color: '#64ffda'
+    color: '#64ffda',
   },
+  
   nav: {
     display: 'flex',
-    gap: '2rem'
+    gap: '2rem',
   },
+  
   navLink: {
     color: '#8892b0',
     textDecoration: 'none',
-    transition: 'color 0.3s'
+    transition: 'color 0.3s',
+    fontSize: '1rem',
+    '&:hover': {
+      color: '#5e9eff',
+    }
   },
-    manageBtn: {
-    padding: '0.5rem 1rem',
+  
+  activeNavLink: {
+    color: '#5e9eff',
+  },
+  
+  userEmail: {
+    color: '#8892b0',
+    fontSize: '0.875rem',
+  },
+  
+  manageBtn: {
+    padding: '0.5rem 1.5rem',
     backgroundColor: 'transparent',
     border: '1px solid #64ffda',
     borderRadius: '6px',
     color: '#64ffda',
     cursor: 'pointer',
-    marginRight: '1rem'
+    marginRight: '1rem',
+    transition: 'all 0.3s',
+    fontSize: '0.875rem',
+    fontWeight: '600',
+    '&:hover': {
+      backgroundColor: '#64ffda',
+      color: '#0a0e27',
+    }
   },
+  
   headerRight: {
     display: 'flex',
     gap: '1rem',
-    alignItems: 'center'
+    alignItems: 'center',
   },
+  
   logoutBtn: {
-    padding: '0.5rem 1rem',
+    padding: '0.5rem 1.5rem',
     backgroundColor: 'transparent',
     border: '1px solid #5e9eff',
     borderRadius: '6px',
     color: '#5e9eff',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    transition: 'all 0.3s',
+    fontSize: '0.875rem',
+    fontWeight: '600',
+    '&:hover': {
+      backgroundColor: '#5e9eff',
+      color: '#ffffff',
+    }
   },
+  
   mainGrid: {
     display: 'grid',
     gridTemplateColumns: '300px 1fr',
     gap: '2rem',
     padding: '2rem',
     maxWidth: '1400px',
-    margin: '0 auto'
+    margin: '0 auto',
   },
+  
   sidebar: {
     backgroundColor: '#151935',
     padding: '1.5rem',
     borderRadius: '12px',
     border: '1px solid #2a3456',
-    height: 'fit-content'
+    height: 'fit-content',
+    position: 'sticky',
+    top: '6rem',
   },
+  
   sidebarTitle: {
     marginBottom: '1.5rem',
-    fontSize: '1.125rem'
+    fontSize: '1.125rem',
+    fontWeight: '600',
   },
+  
   statCard: {
     backgroundColor: '#1e2444',
     padding: '1rem',
     borderRadius: '8px',
     marginBottom: '1rem',
-    textAlign: 'center'
+    textAlign: 'center',
+    border: '1px solid #2a3456',
+    transition: 'all 0.3s',
+    '&:hover': {
+      borderColor: '#5e9eff',
+      transform: 'translateY(-2px)',
+    }
   },
+  
   statLabel: {
-    fontSize: '0.875rem',
+    fontSize: '0.75rem',
     color: '#8892b0',
-    marginBottom: '0.5rem'
+    marginBottom: '0.5rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
   },
+  
   statValue: {
     fontSize: '1.5rem',
     fontWeight: 'bold',
-    color: '#64ffda'
+    color: '#64ffda',
   },
+  
   signalFeed: {
     backgroundColor: '#151935',
     padding: '1.5rem',
     borderRadius: '12px',
-    border: '1px solid #2a3456'
+    border: '1px solid #2a3456',
   },
+  
   feedHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '1.5rem'
+    marginBottom: '1.5rem',
   },
+  
   feedTitle: {
-    fontSize: '1.25rem'
+    fontSize: '1.25rem',
+    fontWeight: '600',
   },
+  
   liveIndicator: {
     display: 'flex',
     alignItems: 'center',
     gap: '0.5rem',
-    color: '#64ffda'
+    color: '#64ffda',
+    fontSize: '0.875rem',
   },
+  
   liveDot: {
     width: '8px',
     height: '8px',
     backgroundColor: '#64ffda',
     borderRadius: '50%',
-    animation: 'pulse 2s infinite'
+    animation: 'pulse 2s infinite',
   },
+  
   noSignals: {
     textAlign: 'center',
     color: '#8892b0',
-    padding: '3rem'
+    padding: '3rem',
   },
+  
   signalCard: {
     backgroundColor: '#1e2444',
     padding: '1.5rem',
     borderRadius: '8px',
     marginBottom: '1rem',
-    border: '1px solid #2a3456'
+    border: '1px solid #2a3456',
+    transition: 'all 0.3s',
+    animation: 'fadeIn 0.5s ease-in',
+    '&:hover': {
+      borderColor: '#5e9eff',
+      transform: 'translateY(-2px)',
+    }
   },
+  
   signalHeader: {
     display: 'flex',
     justifyContent: 'space-between',
-    marginBottom: '1rem'
+    marginBottom: '1rem',
+    alignItems: 'flex-start',
   },
+  
   signalInfo: {
     display: 'flex',
     gap: '1rem',
-    alignItems: 'center'
+    alignItems: 'center',
   },
+  
   direction: {
     padding: '0.5rem 1rem',
-    borderRadius: '6px',
+    borderRadius: '20px',
     fontWeight: 'bold',
-    fontSize: '0.875rem'
+    fontSize: '0.75rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
   },
+  
   long: {
     backgroundColor: 'rgba(100, 255, 218, 0.2)',
-    color: '#64ffda'
+    color: '#64ffda',
   },
+  
   short: {
     backgroundColor: 'rgba(255, 94, 94, 0.2)',
-    color: '#ff5e5e'
+    color: '#ff5e5e',
   },
+  
   pair: {
     fontSize: '1.125rem',
-    fontWeight: '600'
+    fontWeight: '600',
   },
+  
   time: {
     fontSize: '0.75rem',
-    color: '#8892b0'
+    color: '#8892b0',
   },
+  
   signalTitle: {
     color: '#5e9eff',
-    marginBottom: '1rem'
+    marginBottom: '1rem',
+    fontSize: '1.125rem',
+    fontWeight: '600',
   },
+  
   priceGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, 1fr)',
@@ -619,66 +710,92 @@ const styles = {
     backgroundColor: '#151935',
     padding: '1rem',
     borderRadius: '6px',
-    marginBottom: '1rem'
+    marginBottom: '1rem',
   },
+  
   priceItem: {
-    textAlign: 'center'
+    textAlign: 'center',
   },
+  
   priceLabel: {
     display: 'block',
     fontSize: '0.75rem',
     color: '#8892b0',
-    marginBottom: '0.25rem'
+    marginBottom: '0.25rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
   },
+  
   priceValue: {
     fontSize: '1rem',
-    fontWeight: '600'
+    fontWeight: '600',
   },
+  
   analysis: {
     color: '#8892b0',
     fontSize: '0.875rem',
     lineHeight: '1.6',
-    marginBottom: '1rem'
+    marginBottom: '1rem',
   },
+  
   riskManagement: {
     color: '#8892b0',
     fontSize: '0.875rem',
-    marginBottom: '1rem'
+    marginBottom: '1rem',
+    padding: '0.75rem',
+    backgroundColor: 'rgba(255, 214, 100, 0.1)',
+    borderRadius: '6px',
+    border: '1px solid rgba(255, 214, 100, 0.2)',
   },
+  
   signalFooter: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingTop: '1rem',
-    borderTop: '1px solid #2a3456'
+    borderTop: '1px solid #2a3456',
   },
+  
   statusBadge: {
     padding: '0.25rem 0.75rem',
     borderRadius: '20px',
     fontSize: '0.75rem',
-    fontWeight: 'bold'
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
   },
+  
   active: {
     backgroundColor: 'rgba(94, 158, 255, 0.2)',
-    color: '#5e9eff'
+    color: '#5e9eff',
   },
+  
   profit: {
     backgroundColor: 'rgba(100, 255, 218, 0.2)',
-    color: '#64ffda'
+    color: '#64ffda',
   },
+  
   loss: {
     backgroundColor: 'rgba(255, 94, 94, 0.2)',
-    color: '#ff5e5e'
+    color: '#ff5e5e',
   },
+  
   copyBtn: {
     padding: '0.5rem 1rem',
-    backgroundColor: '#1e2444',
+    backgroundColor: '#0a0e27',
     border: '1px solid #2a3456',
     borderRadius: '6px',
     color: '#ffffff',
     cursor: 'pointer',
-    fontSize: '0.875rem'
+    fontSize: '0.875rem',
+    transition: 'all 0.3s',
+    fontWeight: '600',
+    '&:hover': {
+      backgroundColor: '#5e9eff',
+      borderColor: '#5e9eff',
+    }
   },
+  
   overlay: {
     position: 'fixed',
     top: 0,
@@ -689,8 +806,9 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 2000
+    zIndex: 2000,
   },
+  
   modal: {
     backgroundColor: '#151935',
     borderRadius: '12px',
@@ -700,56 +818,74 @@ const styles = {
     overflow: 'hidden',
     display: 'flex',
     flexDirection: 'column',
-    border: '1px solid #2a3456'
+    border: '1px solid #2a3456',
+    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
   },
+  
   modalHeader: {
     padding: '1.5rem',
     borderBottom: '1px solid #2a3456',
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
   },
+  
   closeButton: {
     background: 'none',
     border: 'none',
     fontSize: '2rem',
     color: '#8892b0',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    transition: 'color 0.3s',
+    '&:hover': {
+      color: '#ffffff',
+    }
   },
+  
   modalContent: {
     flex: 1,
     overflowY: 'auto',
-    padding: '1.5rem'
+    padding: '1.5rem',
   },
+  
   performanceStats: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
     gap: '1rem',
-    marginBottom: '2rem'
+    marginBottom: '2rem',
   },
+  
   perfStatCard: {
     backgroundColor: '#1e2444',
     padding: '1.5rem',
     borderRadius: '8px',
     textAlign: 'center',
-    border: '1px solid #2a3456'
+    border: '1px solid #2a3456',
+    transition: 'all 0.3s',
+    '&:hover': {
+      borderColor: '#5e9eff',
+      transform: 'translateY(-2px)',
+    }
   },
+  
   perfValue: {
     fontSize: '2rem',
     fontWeight: 'bold',
     color: '#64ffda',
-    margin: '0.5rem 0'
+    margin: '0.5rem 0',
   },
+  
   perfLabel: {
     color: '#8892b0',
-    fontSize: '0.875rem'
+    fontSize: '0.875rem',
   },
+  
   chartPlaceholder: {
     backgroundColor: '#1e2444',
     padding: '3rem',
     borderRadius: '8px',
     textAlign: 'center',
     color: '#8892b0',
-    border: '1px solid #2a3456'
+    border: '1px solid #2a3456',
   }
 };
