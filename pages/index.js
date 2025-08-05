@@ -14,64 +14,112 @@ export default function LandingPage() {
   const [memberCount, setMemberCount] = useState(23);
   const [isConnected, setIsConnected] = useState(false);
   const [newTradeAlert, setNewTradeAlert] = useState(null);
-  const socketRef = useRef(null);
+  const wsRef = useRef(null);
 
   useEffect(() => {
-    // Initialize socket connection
-    const socket = io(process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:5000', {
-      transports: ['websocket'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 5
-    });
-
-    socketRef.current = socket;
-
-    // Connection event handlers
-    socket.on('connect', () => {
-      console.log('WebSocket connected');
-      setIsConnected(true);
-      // Request initial data on connect
-      socket.emit('request_stats');
-      socket.emit('request_recent_trades');
-    });
-
-    socket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
-      setIsConnected(false);
-    });
-
-    // Real-time event handlers
-    socket.on('new_trade', (trade) => {
-      handleNewTrade(trade);
-    });
-
-    socket.on('trade_closed', (trade) => {
-      updateTradeStatus(trade);
-    });
-
-    socket.on('stats_update', (newStats) => {
-      updateStats(newStats);
-    });
-
-    socket.on('member_count_update', (count) => {
-      setMemberCount(count);
-    });
-
-    socket.on('initial_data', (data) => {
-      if (data.trades) setRecentTrades(data.trades.slice(0, 6));
-      if (data.stats) updateStats(data.stats);
-      if (data.memberCount) setMemberCount(data.memberCount);
-    });
-
-    // Fetch initial data via HTTP as fallback
+    // Fetch initial data
     fetchInitialData();
+
+    // Setup WebSocket connection for public updates (no auth required for landing page)
+    connectWebSocket();
 
     // Cleanup on unmount
     return () => {
-      socket.disconnect();
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
     };
   }, []);
+
+  const connectWebSocket = () => {
+    try {
+      // For landing page, we'll use a public WebSocket endpoint
+      // Your backend should handle unauthenticated connections for public data
+      const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:5000';
+      const ws = new WebSocket(wsUrl + '/public');
+
+      ws.onopen = () => {
+        console.log('WebSocket connected');
+        setIsConnected(true);
+        // Request initial data
+        ws.send(JSON.stringify({ type: 'request_public_data' }));
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          handleWebSocketMessage(message);
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket disconnected');
+        setIsConnected(false);
+        // Attempt to reconnect after 5 seconds
+        setTimeout(connectWebSocket, 5000);
+      };
+
+      wsRef.current = ws;
+    } catch (error) {
+      console.error('Error connecting to WebSocket:', error);
+      // Fall back to polling
+      setInterval(fetchInitialData, 30000);
+    }
+  };
+
+  const handleWebSocketMessage = (message) => {
+    const { type, data, timestamp } = message;
+
+    switch (type) {
+      case 'connected':
+        console.log('Connected to MoonShot Signals');
+        break;
+
+      case 'new_trade':
+        handleNewTrade(data);
+        break;
+
+      case 'trade_update':
+        updateTradeStatus(data);
+        break;
+
+      case 'new_signal':
+        // Show notification for new signal
+        if (data.symbol && data.direction) {
+          setNewTradeAlert({
+            symbol: data.symbol,
+            direction: data.direction,
+            title: data.title
+          });
+          setTimeout(() => setNewTradeAlert(null), 5000);
+        }
+        break;
+
+      case 'stats_update':
+        updateStats(data);
+        break;
+
+      case 'member_count':
+        setMemberCount(data.count || 23);
+        break;
+
+      case 'public_data':
+        // Handle initial data response
+        if (data.trades) setRecentTrades(data.trades.slice(0, 6));
+        if (data.stats) updateStats(data.stats);
+        if (data.memberCount) setMemberCount(data.memberCount);
+        break;
+
+      default:
+        console.log('Unknown message type:', type);
+    }
+  };
 
   const fetchInitialData = async () => {
     try {
@@ -80,25 +128,22 @@ export default function LandingPage() {
       };
 
       // Fetch recent trades
-      const tradesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/trades`, { headers });
-      if (tradesRes.ok) {
+      const tradesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/trades/public`, { headers }).catch(() => null);
+      if (tradesRes?.ok) {
         const trades = await tradesRes.json();
-        const recentPublishedTrades = trades
-          .filter(t => t.signal?.published)
-          .slice(0, 6);
-        setRecentTrades(recentPublishedTrades);
+        setRecentTrades(trades.slice(0, 6));
       }
 
       // Fetch stats
-      const statsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/analytics?period=90`, { headers });
-      if (statsRes.ok) {
+      const statsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/analytics?period=90`, { headers }).catch(() => null);
+      if (statsRes?.ok) {
         const data = await statsRes.json();
         updateStats(data.tradeStats);
       }
 
       // Fetch member count
-      const membersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/subscription-stats`, { headers });
-      if (membersRes.ok) {
+      const membersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/subscription-stats`, { headers }).catch(() => null);
+      if (membersRes?.ok) {
         const data = await membersRes.json();
         setMemberCount(data.activeCount || 23);
       }
@@ -109,23 +154,26 @@ export default function LandingPage() {
 
   const handleNewTrade = (trade) => {
     // Add new trade to the beginning with animation
-    setRecentTrades(prev => [trade, ...prev.slice(0, 5)]);
+    setRecentTrades(prev => {
+      const filtered = prev.filter(t => t.id !== trade.id);
+      return [trade, ...filtered].slice(0, 6);
+    });
     
     // Show notification
-    setNewTradeAlert({
-      symbol: trade.symbol,
-      direction: trade.direction,
-      profit: trade.pnl
-    });
-
-    // Clear notification after 5 seconds
-    setTimeout(() => setNewTradeAlert(null), 5000);
+    if (trade.symbol && trade.direction) {
+      setNewTradeAlert({
+        symbol: trade.symbol,
+        direction: trade.direction,
+        profit: trade.pnl
+      });
+      setTimeout(() => setNewTradeAlert(null), 5000);
+    }
   };
 
   const updateTradeStatus = (updatedTrade) => {
     setRecentTrades(prev => 
       prev.map(trade => 
-        trade.id === updatedTrade.id ? updatedTrade : trade
+        trade.id === updatedTrade.id ? { ...trade, ...updatedTrade } : trade
       )
     );
   };
@@ -141,7 +189,7 @@ export default function LandingPage() {
 
   const calculateSharpeRatio = (stats) => {
     if (!stats.avgWin || !stats.avgLoss) return 5.221;
-    const avgReturn = (stats.avgWin + stats.avgLoss) / stats.totalTrades;
+    const avgReturn = (stats.avgWin + stats.avgLoss) / (stats.totalTrades || 1);
     const riskFreeRate = 0.02;
     return ((avgReturn - riskFreeRate) / Math.abs(stats.avgLoss)) * Math.sqrt(252);
   };
@@ -162,6 +210,48 @@ export default function LandingPage() {
     const minutes = Math.floor((diff % 3600000) / 60000);
     return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
   };
+
+  // Default demo trades for display
+  const demoTrades = [
+    {
+      id: 'demo1',
+      symbol: 'BTC-USDT',
+      direction: 'buy',
+      entry_price: 65450,
+      exit_price: 66320,
+      size: 0.5,
+      pnl: 2847,
+      status: 'closed',
+      opened_at: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      closed_at: new Date()
+    },
+    {
+      id: 'demo2',
+      symbol: 'ETH-USDT',
+      direction: 'sell',
+      entry_price: 3420,
+      exit_price: 3380,
+      size: 10,
+      pnl: 1600,
+      status: 'closed',
+      opened_at: new Date(Date.now() - 45 * 60 * 1000),
+      closed_at: new Date()
+    },
+    {
+      id: 'demo3',
+      symbol: 'SOL-USDT',
+      direction: 'buy',
+      entry_price: 142.50,
+      exit_price: 144.80,
+      size: 50,
+      pnl: 920,
+      status: 'closed',
+      opened_at: new Date(Date.now() - 90 * 60 * 1000),
+      closed_at: new Date()
+    }
+  ];
+
+  const displayTrades = recentTrades.length > 0 ? recentTrades : demoTrades;
 
   return (
     <div style={styles.container}>
@@ -238,6 +328,7 @@ export default function LandingPage() {
           background-size: 200% auto;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
+          background-clip: text;
           animation: gradientShift 3s ease infinite;
         }
 
@@ -319,6 +410,11 @@ export default function LandingPage() {
           .hide-mobile { display: none; }
           .stats-grid-mobile { grid-template-columns: repeat(2, 1fr) !important; }
           .hero-title-mobile { font-size: 2.5rem !important; }
+          .notification-banner { 
+            right: 10px; 
+            left: 10px;
+            padding: 0.75rem 1rem;
+          }
         }
       `}</style>
 
@@ -352,14 +448,14 @@ export default function LandingPage() {
       {newTradeAlert && (
         <div className="notification-banner">
           <div style={{ fontSize: '0.875rem', color: '#64ffda', marginBottom: '0.25rem' }}>
-            🔥 NEW TRADE ALERT
+            🔥 NEW SIGNAL ALERT
           </div>
           <div style={{ fontSize: '1.125rem', fontWeight: '600' }}>
             {newTradeAlert.symbol} {newTradeAlert.direction === 'buy' ? 'LONG' : 'SHORT'}
           </div>
-          {newTradeAlert.profit && (
-            <div style={{ fontSize: '1rem', color: '#64ffda' }}>
-              Profit: {formatPrice(newTradeAlert.profit)}
+          {newTradeAlert.title && (
+            <div style={{ fontSize: '0.875rem', color: '#8892b0', marginTop: '0.25rem' }}>
+              {newTradeAlert.title}
             </div>
           )}
         </div>
@@ -455,11 +551,11 @@ export default function LandingPage() {
           </p>
           
           <div style={styles.tradesGrid}>
-            {recentTrades.map((trade, index) => (
+            {displayTrades.map((trade, index) => (
               <div 
                 key={trade.id} 
                 style={styles.tradeCard} 
-                className={`hover-glow animate-fade-in ${index === 0 ? 'new-trade-flash' : ''}`}
+                className={`hover-glow animate-fade-in ${index === 0 && recentTrades.length > 0 ? 'new-trade-flash' : ''}`}
               >
                 {index === 0 && trade.status === 'open' && (
                   <div style={styles.newBadge} className="animate-pulse">NEW</div>
