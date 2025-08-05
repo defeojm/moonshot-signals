@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { useWebSocket } from '../hooks/useWebSocket';
 import UserSettings from '../components/UserSettings';
 import ChatWidget from '../components/ChatWidget';
+import SubscriptionManagement from '../components/SubscriptionManagement';
 import config from '../utils/config';
 
 // Helper to handle both signal.trade and getSignalTrade(signal)
@@ -27,6 +28,7 @@ export default function CustomerDashboard() {
   const router = useRouter();
   const [showSettings, setShowSettings] = useState(false);
   const [showPerformance, setShowPerformance] = useState(false);
+  const [showSubscription, setShowSubscription] = useState(false);
 
   // WebSocket message handler - moved before useWebSocket
   const handleWebSocketMessage = useCallback((message) => {
@@ -176,24 +178,8 @@ export default function CustomerDashboard() {
     console.log('WebSocket connection status:', isConnected ? 'Connected' : 'Disconnected');
   }, [isConnected]);
 
-  const handleManageSubscription = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      const response = await fetch(`${config.API_URL}/create-portal-session`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        window.location.href = data.url;
-      } else {
-        alert('Unable to open subscription management');
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Failed to open subscription management');
-    }
+  const handleManageSubscription = () => {
+    setShowSubscription(true);
   };
 
   const copyToClipboard = (signal) => {
@@ -440,6 +426,16 @@ TP: $${signal.take_profit || 'N/A'}
             </div>
           </div>
         </div>
+      )}
+
+      {/* Subscription Management Modal */}
+      {showSubscription && (
+        <SubscriptionManagement 
+          user={user}
+          token={localStorage.getItem('token')}
+          onClose={() => setShowSubscription(false)}
+          isModal={true}
+        />
       )}
 
       {/* Chat Widget */}
