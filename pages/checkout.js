@@ -36,7 +36,7 @@ export default function Checkout() {
   const checkSubscription = async () => {
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`${config.API_URL}/api/checkout/subscription-status`, {
+      const response = await fetch(`${config.API_URL}/checkout/subscription-status`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -56,7 +56,7 @@ export default function Checkout() {
     
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`${config.API_URL}/api/checkout/create-session`, {
+      const response = await fetch(`${config.API_URL}/checkout/create-session`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

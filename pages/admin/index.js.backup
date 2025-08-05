@@ -52,7 +52,7 @@ export default function AdminDashboard() {
 
   const testEmailNotification = async (userId, notificationType) => {
     try {
-      const response = await fetch(`${config.API_URL}/test-notifications/test-email`, {
+      const response = await fetch(`${config.API_URL}/api/test-notifications/test-email`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -356,7 +356,7 @@ export default function AdminDashboard() {
     
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`${config.API_URL}/signals`, {
+      const response = await fetch(`${config.API_URL}/api/signals`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -66,7 +66,7 @@ export default function UserSettings({ user, token, onClose }) {
   const fetchSettings = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${config.API_URL}/api/settings/notifications`, {
+      const response = await fetch(`${config.API_URL}/settings/notifications`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -88,7 +88,7 @@ export default function UserSettings({ user, token, onClose }) {
   const saveSettings = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch(`${config.API_URL}/api/settings/notifications`, {
+      const response = await fetch(`${config.API_URL}/settings/notifications`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

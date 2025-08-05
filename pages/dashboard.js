@@ -66,7 +66,7 @@ export default function CustomerDashboard() {
     
     try {
       console.log('Fetching signals...');
-      const response = await fetch(`${config.API_URL}/api/signals`, {
+      const response = await fetch(`${config.API_URL}/signals`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -172,7 +172,7 @@ export default function CustomerDashboard() {
   const handleManageSubscription = async () => {
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`${config.API_URL}/api/create-portal-session`, {
+      const response = await fetch(`${config.API_URL}/create-portal-session`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });

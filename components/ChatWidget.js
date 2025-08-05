@@ -28,7 +28,7 @@ export default function ChatWidget({ user, token, ws }) {
     console.log('Fetching messages with token:', token); // Add this line
     
     try {
-      const response = await fetch(`${config.API_URL}/api/chat/messages`, {
+      const response = await fetch(`${config.API_URL}/chat/messages`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -54,7 +54,7 @@ export default function ChatWidget({ user, token, ws }) {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`${config.API_URL}/api/chat/messages`, {
+      const response = await fetch(`${config.API_URL}/chat/messages`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -12,7 +12,7 @@ export default function AdminChat({ token, ws }) {
   // Fetch all conversations
   const fetchConversations = async () => {
     try {
-      const response = await fetch(`${config.API_URL}/api/chat/admin/conversations`, {
+      const response = await fetch(`${config.API_URL}/chat/admin/conversations`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -28,7 +28,7 @@ export default function AdminChat({ token, ws }) {
   // Fetch messages for selected user
   const fetchMessages = async (userId) => {
     try {
-      const response = await fetch(`${config.API_URL}/api/chat/admin/messages/${userId}`, {
+      const response = await fetch(`${config.API_URL}/chat/admin/messages/${userId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -48,7 +48,7 @@ export default function AdminChat({ token, ws }) {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`${config.API_URL}/api/chat/admin/messages/${selectedUser.id}`, {
+      const response = await fetch(`${config.API_URL}/chat/admin/messages/${selectedUser.id}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
