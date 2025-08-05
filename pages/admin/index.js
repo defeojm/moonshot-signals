@@ -230,7 +230,7 @@ export default function AdminDashboard() {
     console.log('🔍 Fetching members...');
     
     try {
-      const response = await fetch(`${config.API_URL}/api/admin/members`, {
+      const response = await fetch(`${config.API_URL}/admin/members`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -432,7 +432,7 @@ export default function AdminDashboard() {
   const activateSubscription = async (userId, plan) => {
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`${config.API_URL}/api/admin/members/${userId}/activate`, {
+      const response = await fetch(`${config.API_URL}/admin/members/${userId}/activate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
