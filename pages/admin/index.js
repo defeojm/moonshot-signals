@@ -836,6 +836,16 @@ export default function AdminDashboard() {
                       </span>
                     )}
                   </div>
+
+                  {/* Delete Button - NEW SECTION */}
+                  <div style={styles.signalActions}>
+                    <button 
+                      onClick={() => deleteSignal(signal.id)}
+                      style={styles.deleteSignalBtn}
+                    >
+                      🗑️ Delete Signal
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1037,7 +1047,27 @@ const styles = {
     backgroundColor: '#0a0e27',
     color: '#ffffff'
   },
-  
+  signalActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    marginTop: '1rem',
+    paddingTop: '1rem',
+    borderTop: '1px solid rgba(42, 52, 86, 0.3)'
+  },
+  deleteSignalBtn: {
+    padding: '0.5rem 1rem',
+    backgroundColor: 'rgba(255, 94, 94, 0.1)',
+    border: '1px solid rgba(255, 94, 94, 0.3)',
+    borderRadius: '6px',
+    color: '#ff5e5e',
+    fontSize: '0.875rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    transition: 'all 0.3s',
+    fontWeight: '500'
+  },
   chatTab: {
     padding: '2rem'
   },
