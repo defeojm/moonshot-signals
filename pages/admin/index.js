@@ -277,6 +277,34 @@ export default function AdminDashboard() {
     }
   };
 
+  const deleteSignal = async (signalId) => {
+    if (!confirm('Are you sure you want to delete this signal?')) {
+      return;
+    }
+    
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(`${config.API_URL}/signals/${signalId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        alert('Signal deleted successfully!');
+        fetchSignals(); // Refresh the signals list
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to delete signal');
+      }
+    } catch (error) {
+      console.error('Error deleting signal:', error);
+      alert('Failed to delete signal');
+    }
+  };
+
   const publishSignal = async () => {
     if (!selectedTrade) return;
     
@@ -300,7 +328,10 @@ export default function AdminDashboard() {
           analysis: signalForm.analysis,
           risk_management: signalForm.risk_management || '',
           stop_loss: signalForm.stop_loss || '',
-          take_profit: signalForm.take_profit || ''
+          take_profit: signalForm.take_profit || '',
+          // Include trade details for reference
+          leverage: selectedTrade.leverage,
+          size: selectedTrade.size
         })
       });
       
@@ -805,6 +836,16 @@ export default function AdminDashboard() {
                       </span>
                     )}
                   </div>
+
+                  {/* Delete Button - NEW SECTION */}
+                  <div style={styles.signalActions}>
+                    <button 
+                      onClick={() => deleteSignal(signal.id)}
+                      style={styles.deleteSignalBtn}
+                    >
+                      🗑️ Delete Signal
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1005,6 +1046,27 @@ const styles = {
     minHeight: '100vh',
     backgroundColor: '#0a0e27',
     color: '#ffffff'
+  },
+  signalActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    marginTop: '1rem',
+    paddingTop: '1rem',
+    borderTop: '1px solid rgba(42, 52, 86, 0.3)'
+  },
+  deleteSignalBtn: {
+    padding: '0.5rem 1rem',
+    backgroundColor: 'rgba(255, 94, 94, 0.1)',
+    border: '1px solid rgba(255, 94, 94, 0.3)',
+    borderRadius: '6px',
+    color: '#ff5e5e',
+    fontSize: '0.875rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    transition: 'all 0.3s',
+    fontWeight: '500'
   },
   chatTab: {
     padding: '2rem'
