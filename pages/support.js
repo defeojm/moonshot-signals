@@ -17,23 +17,43 @@ export default function Support() {
     setLoading(true);
     setError('');
 
-    // For now, we'll just show a success message
-    // Later you can implement actual email sending
-    setTimeout(() => {
-      setSuccess(true);
-      setLoading(false);
-      // Clear form
-      setName('');
-      setEmail('');
-      setSubject('');
-      setMessage('');
-      
-      // Hide success message after 5 seconds
-      setTimeout(() => {
-        setSuccess(false);
-      }, 5000);
-    }, 1000);
-  };
+    try {
+        const response = await fetch(`${config.API_URL}/support/contact`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            name,
+            email,
+            subject,
+            message
+        }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+        setSuccess(true);
+        // Clear form
+        setName('');
+        setEmail('');
+        setSubject('');
+        setMessage('');
+        
+        // Hide success message after 5 seconds
+        setTimeout(() => {
+            setSuccess(false);
+        }, 5000);
+        } else {
+        setError(data.error || 'Failed to send message. Please try again.');
+        }
+    } catch (err) {
+        setError('Failed to send message. Please try again.');
+    } finally {
+        setLoading(false);
+    }
+    };
 
   return (
     <div style={styles.container}>
