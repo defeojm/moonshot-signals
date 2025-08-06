@@ -729,15 +729,15 @@ export default function AdminDashboard() {
                   </div>
 
                   {/* Trade Symbol and Direction */}
-                  {signal.Trade && (
+                  {signal.trade && (
                     <div style={styles.symbolDirectionRow}>
-                      <span style={styles.signalSymbol}>{signal.Trade.symbol}</span>
+                      <span style={styles.signalSymbol}>{signal.trade.symbol}</span>
                       <span style={{
                         ...styles.directionBadge,
-                        backgroundColor: signal.Trade.direction === 'BUY' ? 'rgba(100, 255, 218, 0.2)' : 'rgba(255, 94, 94, 0.2)',
-                        color: signal.Trade.direction === 'BUY' ? '#64ffda' : '#ff5e5e'
+                        backgroundColor: signal.trade.direction === 'BUY' ? 'rgba(100, 255, 218, 0.2)' : 'rgba(255, 94, 94, 0.2)',
+                        color: signal.trade.direction === 'BUY' ? '#64ffda' : '#ff5e5e'
                       }}>
-                        {signal.Trade.direction === 'BUY' ? 'LONG' : 'SHORT'}
+                        {signal.trade.direction === 'BUY' ? 'LONG' : 'SHORT'}
                       </span>
                     </div>
                   )}
@@ -759,17 +759,17 @@ export default function AdminDashboard() {
                   )}
 
                   {/* Trade Details Grid */}
-                  {signal.Trade && (
+                  {signal.trade && (
                     <div style={styles.tradeDetailsGrid}>
                       <div style={styles.detailItem}>
                         <span style={styles.detailLabel}>Entry Price</span>
-                        <span style={styles.detailValue}>${parseFloat(signal.Trade.entry_price).toFixed(2)}</span>
+                        <span style={styles.detailValue}>${parseFloat(signal.trade.entry_price).toFixed(2)}</span>
                       </div>
                       
-                      {signal.Trade.exit_price && (
+                      {signal.trade.exit_price && (
                         <div style={styles.detailItem}>
                           <span style={styles.detailLabel}>Exit Price</span>
-                          <span style={styles.detailValue}>${parseFloat(signal.Trade.exit_price).toFixed(2)}</span>
+                          <span style={styles.detailValue}>${parseFloat(signal.trade.exit_price).toFixed(2)}</span>
                         </div>
                       )}
                       
@@ -789,18 +789,18 @@ export default function AdminDashboard() {
                       
                       <div style={styles.detailItem}>
                         <span style={styles.detailLabel}>Size</span>
-                        <span style={styles.detailValue}>{signal.Trade.size}</span>
+                        <span style={styles.detailValue}>{signal.trade.size}</span>
                       </div>
                       
                       <div style={styles.detailItem}>
                         <span style={styles.detailLabel}>Leverage</span>
-                        <span style={styles.detailValue}>{signal.Trade.leverage}x</span>
+                        <span style={styles.detailValue}>{signal.trade.leverage}x</span>
                       </div>
                     </div>
                   )}
 
                   {/* P&L Section if trade is closed */}
-                  {signal.Trade && signal.Trade.pnl && (
+                  {signal.trade && signal.Trade.pnl && (
                     <div style={styles.pnlSection}>
                       <span style={styles.pnlLabel}>P&L Result</span>
                       <span style={{
@@ -827,12 +827,12 @@ export default function AdminDashboard() {
                                   signal.Trade?.status === 'CLOSED' ? '#8892b0' : 
                                   '#ff5e5e'
                     }}>
-                      {signal.Trade?.status || 'NO TRADE DATA'}
+                      {signal.trade?.status || 'NO TRADE DATA'}
                     </span>
                     
-                    {signal.Trade?.closed_at && signal.Trade?.opened_at && (
+                    {signal.trade?.closed_at && signal.trade?.opened_at && (
                       <span style={styles.duration}>
-                        Duration: {calculateDuration(signal.Trade.opened_at, signal.Trade.closed_at)}
+                        Duration: {calculateDuration(signal.trade.opened_at, signal.trade.closed_at)}
                       </span>
                     )}
                   </div>
